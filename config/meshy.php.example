@@ -1,0 +1,11 @@
+<?php
+// Configuración de Meshy AI API para Text-to-3D
+// Obtén tu API key en: https://www.meshy.ai/
+// Copia este archivo a meshy.php y configura tu API key
+
+return [
+    'api_key' => getenv('MESHY_API_KEY') ?: 'TU_API_KEY_MESHY',
+    'api_base_url' => 'https://api.meshy.ai/v2',
+    'timeout' => 300,
+    'connect_timeout' => 30
+];

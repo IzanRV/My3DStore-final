@@ -1,0 +1,14 @@
+# Configuración para la raíz del proyecto
+RewriteEngine On
+
+# Permitir acceso directo a archivos estáticos en public
+# Si es un archivo estático que existe, servirlo directamente
+RewriteCond %{REQUEST_URI} ^/PI/public/
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteCond %{REQUEST_URI} \.(css|js|jpg|jpeg|png|gif|ico|svg|woff|woff2|ttf|eot|pdf)$ [NC]
+RewriteRule ^ - [L]
+
+# Redirigir todo lo demás a index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]

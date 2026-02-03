@@ -1,0 +1,25 @@
+# Configuración básica para Apache
+RewriteEngine On
+
+# Servir archivos estáticos directamente - DEBE IR PRIMERO
+# Si el archivo existe y es un archivo estático, servirlo sin procesar
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteCond %{REQUEST_URI} \.(css|js|jpg|jpeg|png|gif|ico|svg|woff|woff2|ttf|eot|pdf)$ [NC]
+RewriteRule ^ - [L]
+
+# Redirigir todo lo demás a index.php solo si el archivo no existe
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# Asegurar que los archivos estáticos no se procesen como PHP
+<FilesMatch "\.(css|js|jpg|jpeg|png|gif|ico|svg)$">
+    SetHandler default-handler
+</FilesMatch>
+
+# Proteger archivos sensibles (sintaxis Apache 2.4)
+<FilesMatch "\.(sql|log|ini)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</FilesMatch>

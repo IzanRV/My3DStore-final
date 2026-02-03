@@ -1,0 +1,13 @@
+<?php
+// Configuración de Tripo3D AI
+// Obtén tu API key en: https://studio.tripo3d.ai/
+// Copia este archivo a tripo3d.php y configura tu API key
+
+return [
+    'api_key' => getenv('TRIPO3D_API_KEY') ?: 'TU_API_KEY_TRIPO3D',
+    'api_base_url' => 'https://api.tripo3d.ai',
+    'max_file_size' => 5 * 1024 * 1024, // 5MB
+    'allowed_types' => ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+    'timeout' => 120,
+    'connect_timeout' => 30
+];

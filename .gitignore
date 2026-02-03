@@ -1,0 +1,32 @@
+# Secretos y claves (nunca subir)
+key
+.env
+.env.*
+!.env.example
+
+# Configuración local (usar los .example como plantilla)
+config/database.php
+config/tripo3d.php
+config/replicate.php
+config/meshy.php
+
+# Dependencias
+vendor/
+node_modules/
+
+# IDE y sistema
+.idea/
+.vscode/
+*.swp
+*.swo
+Thumbs.db
+.DS_Store
+
+# Logs y caché
+*.log
+storage/
+cache/
+
+# Archivos generados por el usuario (opcional)
+# public/stl/generated/
+# public/glb/generated/
