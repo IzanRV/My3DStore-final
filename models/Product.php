@@ -119,5 +119,14 @@ class Product {
         $stmt->bind_param("ii", $quantity, $id);
         return $stmt->execute();
     }
+
+    /**
+     * Actualiza el campo dimensions (p. ej. nombre de archivo STL para productos generados por IA)
+     */
+    public function updateDimensions($id, $dimensions) {
+        $stmt = $this->db->prepare("UPDATE products SET dimensions = ? WHERE id = ?");
+        $stmt->bind_param("si", $dimensions, $id);
+        return $stmt->execute();
+    }
 }
 

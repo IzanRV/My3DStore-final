@@ -11,7 +11,7 @@ class Static3DViewer {
         }
 
         this.options = {
-            modelPath: options.modelPath || '/My3DStore/public/glb/pato.glb',
+            modelPath: options.modelPath || (this.container && this.container.dataset.modelPath) || '/public/glb/pato.glb',
             backgroundColor: options.backgroundColor || 0xf8fafc,
             autoRotate: options.autoRotate !== false, // Rotación automática por defecto
             rotationSpeed: options.rotationSpeed || 0.5,
@@ -33,20 +33,25 @@ class Static3DViewer {
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(this.options.backgroundColor);
 
-        // Crear cámara
-        const width = this.container.clientWidth;
-        const height = this.container.clientHeight || 400;
-        
+        // Tamaño del contenedor (evitar 0 para no romper aspect ratio de la cámara)
+        const w = this.container.clientWidth;
+        const h = this.container.clientHeight || 400;
+        const width = Math.max(w, 1);
+        const height = Math.max(h, 1);
+
         this.camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
         this.camera.position.set(0, 0, 100);
 
         // Crear renderer
         this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         this.renderer.setSize(width, height);
-        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.renderer.outputEncoding = THREE.sRGBEncoding;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 1.0;
+        this.renderer.domElement.style.display = 'block';
+        this.renderer.domElement.style.width = '100%';
+        this.renderer.domElement.style.height = '100%';
         this.container.appendChild(this.renderer.domElement);
 
         // Iluminación
@@ -65,54 +70,173 @@ class Static3DViewer {
         directionalLight3.position.set(0, 1, 0);
         this.scene.add(directionalLight3);
 
-        // Manejar redimensionamiento
+        // Redimensionar cuando cambie la ventana o el propio contenedor (p. ej. tras el layout)
         window.addEventListener('resize', () => this.onWindowResize());
+        this._resizeObserver = new ResizeObserver(() => {
+            this.onWindowResize();
+        });
+        this._resizeObserver.observe(this.container);
+
+        // Iniciar bucle de render (así se ve el fondo aunque el modelo falle o tarde)
+        this.animate();
 
         // Cargar modelo
         this.loadModel();
     }
 
     loadModel() {
-        const loader = new THREE.GLTFLoader();
-        
-        loader.load(
-            this.options.modelPath,
-            (gltf) => {
-                this.model = gltf.scene;
-                
-                // Aplicar rotación inicial
-                if (this.options.initialRotation) {
-                    const rot = this.options.initialRotation;
-                    this.model.rotation.x = rot.x || 0;
-                    this.model.rotation.y = rot.y || 0;
-                    this.model.rotation.z = rot.z || 0;
-                }
-                
-                // Calcular escala
-                const box = new THREE.Box3().setFromObject(this.model);
-                const size = box.getSize(new THREE.Vector3());
-                const maxDim = Math.max(size.x, size.y, size.z);
-                
-                if (maxDim > 0) {
-                    const scale = 50 / maxDim;
-                    this.model.scale.multiplyScalar(scale);
-                    
-                    // Centrar modelo
-                    const center = box.getCenter(new THREE.Vector3());
-                    this.model.position.sub(center.multiplyScalar(scale));
-                }
+        let path = (this.options.modelPath || '').replace(/\?.*$/, '').replace(/#.*$/, '').trim();
+        const fallbackPath = (this.container && this.container.dataset.fallbackModelPath) || this.options.fallbackModelPath || '';
 
-                this.scene.add(this.model);
-                this.fitCameraToModel();
-                this.animate();
-            },
-            (progress) => {
-                // Mostrar progreso si es necesario
-            },
-            (error) => {
-                console.error('Error loading GLB:', error);
+        // URL absoluta para que fetch funcione desde cualquier página
+        const absoluteUrl = path && !path.startsWith('http') 
+            ? (window.location.origin + (path.startsWith('/') ? path : '/' + path))
+            : path;
+
+        const tryFallback = () => {
+            if (fallbackPath && fallbackPath !== path && !this._fallbackTried) {
+                this._fallbackTried = true;
+                this.options.modelPath = fallbackPath;
+                this.loadModel();
             }
-        );
+        };
+
+        const onLoadError = (loaderName) => {
+            return (error) => {
+                console.warn(loaderName + ' failed:', path, error);
+                tryFallback();
+            };
+        };
+
+        const isStl = /\.stl$/i.test(path);
+
+        const loadFromBlob = (buffer) => {
+            if (!buffer || buffer.byteLength === 0) return;
+            // Si la respuesta parece HTML (404/error del servidor), usar fallback
+            const first = new Uint8Array(buffer, 0, Math.min(100, buffer.byteLength));
+            const start = String.fromCharCode.apply(null, first);
+            if (start.trim().startsWith('<') || start.trim().startsWith('<!')) {
+                tryFallback();
+                return;
+            }
+            const blob = new Blob([buffer]);
+            const blobUrl = URL.createObjectURL(blob);
+            const revoke = () => { setTimeout(() => URL.revokeObjectURL(blobUrl), 2000); };
+
+            if (isStl && typeof THREE.STLLoader !== 'undefined') {
+                const loader = new THREE.STLLoader();
+                loader.load(blobUrl,
+                    (geometry) => {
+                        revoke();
+                        const material = new THREE.MeshPhongMaterial({
+                            color: 0x0056b3,
+                            specular: 0x222222,
+                            shininess: 30
+                        });
+                        this.model = new THREE.Mesh(geometry, material);
+                        this._centerAndScaleModel();
+                        this.scene.add(this.model);
+                        this.fitCameraToModel();
+                    },
+                    undefined,
+                    (err) => { revoke(); onLoadError('STL')(err); }
+                );
+            } else {
+                const loader = new THREE.GLTFLoader();
+                loader.load(blobUrl,
+                    (gltf) => {
+                        revoke();
+                        this.model = gltf.scene;
+                        if (this.options.initialRotation) {
+                            const rot = this.options.initialRotation;
+                            this.model.rotation.x = rot.x || 0;
+                            this.model.rotation.y = rot.y || 0;
+                            this.model.rotation.z = rot.z || 0;
+                        }
+                        this._centerAndScaleModel();
+                        this.scene.add(this.model);
+                        this.fitCameraToModel();
+                    },
+                    undefined,
+                    (err) => { revoke(); onLoadError('GLB')(err); }
+                );
+            }
+        };
+
+        const loadDirect = () => {
+            // Carga directa con el loader (por si fetch falla por CORS o ruta)
+            const urlToLoad = absoluteUrl || path;
+            if (isStl && typeof THREE.STLLoader !== 'undefined') {
+                const loader = new THREE.STLLoader();
+                loader.load(urlToLoad,
+                    (geometry) => {
+                        const material = new THREE.MeshPhongMaterial({
+                            color: 0x0056b3,
+                            specular: 0x222222,
+                            shininess: 30
+                        });
+                        this.model = new THREE.Mesh(geometry, material);
+                        this._centerAndScaleModel();
+                        this.scene.add(this.model);
+                        this.fitCameraToModel();
+                    },
+                    undefined,
+                    onLoadError('STL')
+                );
+            } else {
+                const loader = new THREE.GLTFLoader();
+                loader.load(urlToLoad,
+                    (gltf) => {
+                        this.model = gltf.scene;
+                        if (this.options.initialRotation) {
+                            const rot = this.options.initialRotation;
+                            this.model.rotation.x = rot.x || 0;
+                            this.model.rotation.y = rot.y || 0;
+                            this.model.rotation.z = rot.z || 0;
+                        }
+                        this._centerAndScaleModel();
+                        this.scene.add(this.model);
+                        this.fitCameraToModel();
+                    },
+                    undefined,
+                    onLoadError('GLB')
+                );
+            }
+        };
+
+        fetch(absoluteUrl, { method: 'GET', credentials: 'same-origin' })
+            .then((res) => {
+                if (!res.ok) {
+                    tryFallback();
+                    return null;
+                }
+                const ct = (res.headers.get('content-type') || '').toLowerCase();
+                if (ct.indexOf('text/html') !== -1) {
+                    tryFallback();
+                    return null;
+                }
+                return res.arrayBuffer();
+            })
+            .then((buffer) => {
+                if (buffer) loadFromBlob(buffer);
+            })
+            .catch(() => {
+                // Si fetch falla (red, CORS, ruta), intentar carga directa con el loader; si falla, onLoadError hará tryFallback
+                loadDirect();
+            });
+    }
+
+    _centerAndScaleModel() {
+        if (!this.model) return;
+        const box = new THREE.Box3().setFromObject(this.model);
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        if (maxDim > 0) {
+            const scale = 50 / maxDim;
+            this.model.scale.multiplyScalar(scale);
+            const center = box.getCenter(new THREE.Vector3());
+            this.model.position.sub(center.multiplyScalar(scale));
+        }
     }
 
     fitCameraToModel() {
@@ -145,15 +269,20 @@ class Static3DViewer {
     }
 
     onWindowResize() {
-        const width = this.container.clientWidth;
-        const height = this.container.clientHeight;
-        
+        if (!this.container || !this.camera || !this.renderer) return;
+        const w = this.container.clientWidth;
+        const h = this.container.clientHeight;
+        const width = Math.max(w, 1);
+        const height = Math.max(h, 1);
         this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(width, height);
     }
 
     destroy() {
+        if (this._resizeObserver && this.container) {
+            this._resizeObserver.unobserve(this.container);
+        }
         if (this.animationId) {
             cancelAnimationFrame(this.animationId);
         }
@@ -180,13 +309,18 @@ class Static3DViewer {
     }
 }
 
+// Máximo de visores a crear (evitar "Too many WebGL contexts", límite ~8 en muchos navegadores)
+var STATIC_3D_VIEWER_MAX = 6;
+
 // Función helper para inicializar múltiples visores estáticos
 function initStatic3DViewers() {
     const viewers = document.querySelectorAll('.static-3d-viewer');
+    const toInit = Array.from(viewers).slice(0, STATIC_3D_VIEWER_MAX);
     const viewerInstances = [];
     
-    viewers.forEach((container, index) => {
+    toInit.forEach((container) => {
         const viewer = new Static3DViewer(container, {
+            modelPath: container.dataset.modelPath || '/public/glb/pato.glb',
             autoRotate: container.dataset.autoRotate !== 'false',
             rotationSpeed: parseFloat(container.dataset.rotationSpeed) || 0.5
         });

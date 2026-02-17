@@ -1,25 +1,25 @@
-# Configuración básica para Apache
+# Habilitar rewrite engine
 RewriteEngine On
+RewriteBase /
 
-# Servir archivos estáticos directamente - DEBE IR PRIMERO
-# Si el archivo existe y es un archivo estático, servirlo sin procesar
-RewriteCond %{REQUEST_FILENAME} -f
-RewriteCond %{REQUEST_URI} \.(css|js|jpg|jpeg|png|gif|ico|svg|woff|woff2|ttf|eot|pdf)$ [NC]
-RewriteRule ^ - [L]
-
-# Redirigir todo lo demás a index.php solo si el archivo no existe
+# Si el archivo o directorio existe, servirlo directamente
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
+
+# Redirigir todo lo demás a index.php
 RewriteRule ^(.*)$ index.php [QSA,L]
 
-# Asegurar que los archivos estáticos no se procesen como PHP
-<FilesMatch "\.(css|js|jpg|jpeg|png|gif|ico|svg)$">
-    SetHandler default-handler
+# Configuración de seguridad
+<FilesMatch "\.(htaccess|htpasswd|ini|log|sh|sql)$">
+    Order Allow,Deny
+    Deny from all
 </FilesMatch>
 
-# Proteger archivos sensibles (sintaxis Apache 2.4)
-<FilesMatch "\.(sql|log|ini)$">
-    <IfModule mod_authz_core.c>
-        Require all denied
-    </IfModule>
-</FilesMatch>
+# Configurar tipos MIME
+AddType application/javascript .js
+AddType text/css .css
+
+# Habilitar compresión
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript
+</IfModule>

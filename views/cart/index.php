@@ -1,7 +1,7 @@
 <?php
 $pageTitle = 'Cesta de Compra - My3DStore';
 $useTailwindBody = true; // Activar clases Tailwind para esta página
-$loadStatic3D = true; // Cargar modelos 3D estáticos
+// No cargar visor 3D en cesta (solo en ficha de producto) para evitar límite WebGL
 include __DIR__ . '/../../includes/header.php';
 ?>
 
@@ -44,8 +44,8 @@ include __DIR__ . '/../../includes/header.php';
                 ?>
                     <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row gap-4">
                         <!-- Modelo 3D del producto -->
-                        <div class="w-full sm:w-32 h-32 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0">
-                            <div class="static-3d-viewer w-full h-full" data-auto-rotate="true" data-rotation-speed="0.3"></div>
+                        <div class="w-full sm:w-32 h-32 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0 text-primary">
+                            <span class="material-icons-outlined text-4xl">view_in_ar</span>
                         </div>
                         
                         <!-- Información del producto -->

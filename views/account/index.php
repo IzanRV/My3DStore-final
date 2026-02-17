@@ -4,7 +4,7 @@ include __DIR__ . '/../../includes/header.php';
 
 $user = getUser();
 if (!$user) {
-    header('Location: /My3DStore/?action=login');
+    header('Location: ' . url('login'));
     exit;
 }
 ?>
@@ -19,33 +19,29 @@ if (!$user) {
             <div class="info-section">
                 <div class="info-item">
                     <label>Nombre:</label>
-                    <span><?php echo htmlspecialchars($user['name'] ?? 'No especificado'); ?></span>
+                    <span><?php echo htmlspecialchars(trim($user['name'] ?? '') ?: 'No especificado'); ?></span>
                 </div>
                 
                 <div class="info-item">
                     <label>Email:</label>
-                    <span><?php echo htmlspecialchars($user['email']); ?></span>
+                    <span><?php echo htmlspecialchars(trim($user['email'] ?? '') ?: 'No especificado'); ?></span>
                 </div>
                 
-                <?php if (!empty($user['phone'])): ?>
                 <div class="info-item">
                     <label>Teléfono:</label>
-                    <span><?php echo htmlspecialchars($user['phone']); ?></span>
+                    <span><?php echo htmlspecialchars(trim($user['phone'] ?? '') ?: 'No especificado'); ?></span>
                 </div>
-                <?php endif; ?>
                 
-                <?php if (!empty($user['address'])): ?>
                 <div class="info-item">
                     <label>Dirección:</label>
-                    <span><?php echo nl2br(htmlspecialchars($user['address'])); ?></span>
+                    <span><?php echo nl2br(htmlspecialchars(trim($user['address'] ?? '') ?: 'No especificado')); ?></span>
                 </div>
-                <?php endif; ?>
             </div>
             
             <div class="account-actions">
-                <a href="/My3DStore/?action=orders" class="btn btn-primary">Ver Mis Pedidos</a>
-                <a href="/My3DStore/?action=cart" class="btn btn-secondary">Ver Carrito</a>
-                <a href="/My3DStore/?action=logout" class="btn btn-secondary">Cerrar Sesión</a>
+                <a href="<?php echo url('orders'); ?>" class="btn btn-primary">Ver Mis Pedidos</a>
+                <a href="<?php echo url('cart'); ?>" class="btn btn-secondary">Ver Carrito</a>
+                <a href="<?php echo url('logout'); ?>" class="btn btn-secondary">Cerrar Sesión</a>
             </div>
         </div>
     </div>
@@ -65,16 +61,17 @@ if (!$user) {
 
 .account-container {
     background: var(--white);
-    border-radius: 12px;
-    padding: 2rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-radius: 16px;
+    padding: 2.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .account-info h2 {
     color: var(--blue-primary);
     margin-bottom: 1.5rem;
     padding-bottom: 1rem;
-    border-bottom: 2px solid var(--blue-lighter);
+    border-bottom: 2px solid var(--blue-primary);
+    font-weight: 600;
 }
 
 .info-section {
@@ -101,6 +98,7 @@ if (!$user) {
 .info-item span {
     color: var(--text-light);
     flex: 1;
+    text-align: right;
 }
 
 .account-actions {
@@ -114,6 +112,31 @@ if (!$user) {
     flex: 1;
     min-width: 150px;
     text-align: center;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    display: inline-block;
+    font-weight: 500;
+    transition: background 0.2s, box-shadow 0.2s;
+}
+
+.account-actions .btn-primary {
+    background: linear-gradient(135deg, #4A90E2 0%, #5BA3F5 100%);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
+}
+
+.account-actions .btn-primary:hover {
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
+}
+
+.account-actions .btn-secondary {
+    background: #F5F5F5;
+    color: #2C3E50;
+}
+
+.account-actions .btn-secondary:hover {
+    background: #E0E0E0;
 }
 
 @media (max-width: 768px) {

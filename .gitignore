@@ -27,6 +27,7 @@ Thumbs.db
 storage/
 cache/
 
-# Archivos generados por el usuario (opcional)
-# public/stl/generated/
-# public/glb/generated/
+# Archivos generados (no subir al repo)
+public/generated_models/
+public/stl/*.stl
+public/stl/generated/*.stl

@@ -23,8 +23,20 @@ class TripoController {
     
     /**
      * Detecta la ruta de Python disponible
+     * En Docker, usa la variable de entorno PYTHON_PATH o python3 por defecto
      */
     private function detectPythonPath() {
+        // Si estamos en Docker, usar variable de entorno PYTHON_PATH o python3
+        $pythonPathEnv = getenv('PYTHON_PATH');
+        if ($pythonPathEnv) {
+            return $pythonPathEnv;
+        }
+        
+        // Si estamos en un contenedor Docker (verificar si estamos en /var/www/html)
+        if (file_exists('/.dockerenv') || getenv('DOCKER_CONTAINER')) {
+            return 'python3';
+        }
+        
         // Ruta conocida donde está instalado Python (verificada que funciona)
         $pythonPaths = [
             'C:\\Python314\\python.exe',  // Ruta completa encontrada y verificada

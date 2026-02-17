@@ -1,0 +1,31 @@
+FROM python:3.11-slim
+
+# Instalar dependencias del sistema
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Configurar directorio de trabajo
+WORKDIR /app
+
+# Copiar archivos de requisitos si existen
+COPY requirements.txt* ./
+
+# Instalar dependencias Python básicas
+RUN pip install --no-cache-dir --upgrade pip
+
+# Instalar dependencias opcionales (comentadas por defecto, descomentar según necesidad)
+# Para Shap-E (requiere GPU/CUDA, mejor ejecutar en host con GPU)
+# RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+# RUN pip install shap-e trimesh
+
+# Para Tripo3D SDK
+# RUN pip install tripo3d
+
+# Copiar scripts
+COPY scripts/ ./scripts/
+COPY shap-e/ ./shap-e/
+
+# Mantener contenedor corriendo
+CMD ["tail", "-f", "/dev/null"]

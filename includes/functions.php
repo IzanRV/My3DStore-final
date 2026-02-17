@@ -2,6 +2,31 @@
 // Funciones auxiliares
 require_once __DIR__ . '/../config/database.php';
 
+/**
+ * Ruta base del proyecto para URLs (Docker: /, WAMP: /My3DStore/)
+ */
+function getBasePath() {
+    static $basePath = null;
+    if ($basePath === null) {
+        if (file_exists('/.dockerenv') || getenv('DOCKER_CONTAINER')) {
+            $basePath = '/';
+        } else {
+            $scriptPath = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
+            if (basename($scriptPath) === 'public') {
+                $scriptPath = dirname($scriptPath);
+            }
+            if (basename($scriptPath) === 'api') {
+                $scriptPath = dirname($scriptPath);
+            }
+            $basePath = rtrim($scriptPath, '/') . '/';
+            if ($basePath === '/') {
+                $basePath = '/My3DStore/';
+            }
+        }
+    }
+    return $basePath;
+}
+
 function startSession() {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
@@ -20,7 +45,7 @@ function isAdmin() {
 
 function requireLogin() {
     if (!isLoggedIn()) {
-        header('Location: /My3DStore/?action=login');
+        header('Location: ' . url('login'));
         exit;
     }
 }
@@ -28,7 +53,7 @@ function requireLogin() {
 function requireAdmin() {
     requireLogin();
     if (!isAdmin()) {
-        header('Location: /My3DStore/');
+        header('Location: ' . url());
         exit;
     }
 }
@@ -96,14 +121,49 @@ function getCartCount() {
 }
 
 function asset($path) {
-    // Generar ruta correcta para assets (CSS, JS, imágenes)
-    $basePath = '/My3DStore/public/';
+    // Generar ruta correcta para assets (CSS, JS, imágenes, GLB)
+    // En Docker, Nginx tiene root=public, así que las URLs son /js/..., /glb/... (sin /public/)
+    // En WAMP, la app está en /My3DStore/, así que /My3DStore/public/...
+    $basePath = (file_exists('/.dockerenv') || getenv('DOCKER_CONTAINER')) 
+        ? '/' 
+        : '/My3DStore/public/';
     return $basePath . ltrim($path, '/');
+}
+
+/**
+ * URL del modelo 3D para un producto (STL/GLB en dimensions o pato.glb por defecto).
+ * Busca en stl/ o stl/generated/ según el nombre del archivo.
+ * @param array|null $product Debe contener 'dimensions' (nombre de archivo STL/GLB si existe).
+ * @return string URL del asset del modelo.
+ */
+function productModelAsset($product) {
+    if (!is_array($product)) {
+        return asset('glb/pato.glb');
+    }
+    $d = isset($product['dimensions']) ? trim($product['dimensions']) : '';
+    if ($d !== '' && (strpos($d, '.stl') !== false || strpos($d, '.glb') !== false)) {
+        $ext = (strpos($d, '.stl') !== false) ? 'stl' : 'glb';
+        $baseDir = __DIR__ . '/../public/' . $ext . '/';
+        $subPath = $ext . '/' . $d;
+        if ($ext === 'stl') {
+            if (file_exists($baseDir . $d)) {
+                return asset($subPath);
+            }
+            if (file_exists($baseDir . 'generated/' . $d)) {
+                return asset($ext . '/generated/' . $d);
+            }
+        }
+        return asset($subPath);
+    }
+    return asset('glb/pato.glb');
 }
 
 function url($path = '', $params = []) {
     // Generar URL correcta para la aplicación
-    $baseUrl = '/My3DStore/';
+    // En Docker, usar ruta relativa; en WAMP, usar ruta con /My3DStore/
+    $baseUrl = (file_exists('/.dockerenv') || getenv('DOCKER_CONTAINER')) 
+        ? '/' 
+        : '/My3DStore/';
     $url = $baseUrl;
     
     if (!empty($path)) {

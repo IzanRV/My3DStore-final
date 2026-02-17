@@ -55,7 +55,7 @@ $stlPath = '/My3DStore/public/stl/' . htmlspecialchars($stlFile);
     </div>
 </div>
 
-<script src="/My3DStore/public/js/stl-viewer.js"></script>
+<script src="<?php echo htmlspecialchars(asset('js/stl-viewer.js')); ?>"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Inicializar visor

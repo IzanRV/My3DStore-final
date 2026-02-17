@@ -1,7 +1,7 @@
 <?php
 $pageTitle = 'My3DStore - Impresión 3D Personalizada';
 $useTailwindBody = true; // Activar clases Tailwind para el body en la página principal
-$loadStatic3D = true; // Cargar modelos 3D estáticos
+// No cargar visor 3D en home (solo en ficha de producto) para evitar límite WebGL
 // Obtener productos destacados para el hero
 $featuredProduct = null;
 $plasticProducts = [];
@@ -86,8 +86,10 @@ include __DIR__ . '/../includes/header.php';
 <div class="absolute inset-0 bg-primary/20 blur-[100px] rounded-full scale-150"></div>
 <?php if ($featuredProduct): ?>
 <div class="relative bg-white dark:bg-card-dark p-4 rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform lg:rotate-3 hover:rotate-0 transition-transform duration-500">
-<a href="/My3DStore/?action=product&id=<?php echo $featuredProduct['id']; ?>">
-<div id="featured-product-3d" class="static-3d-viewer w-full h-[500px] rounded-[2rem]"></div>
+<a href="/My3DStore/?action=product&id=<?php echo $featuredProduct['id']; ?>" class="block">
+<div class="product-preview-placeholder w-full h-[500px] rounded-[2rem] flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-primary">
+<span class="material-icons-outlined text-6xl">view_in_ar</span>
+</div>
 <div class="absolute bottom-10 left-10 right-10 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-6 rounded-3xl border border-white/20">
 <div class="flex justify-between items-center">
 <div>
@@ -103,7 +105,9 @@ include __DIR__ . '/../includes/header.php';
 </div>
 <?php else: ?>
 <div class="relative bg-white dark:bg-card-dark p-4 rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform lg:rotate-3 hover:rotate-0 transition-transform duration-500">
-<div id="featured-product-3d" class="static-3d-viewer w-full h-[500px] rounded-[2rem]"></div>
+<div class="product-preview-placeholder w-full h-[500px] rounded-[2rem] flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-primary">
+<span class="material-icons-outlined text-6xl">view_in_ar</span>
+</div>
 <div class="absolute bottom-10 left-10 right-10 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-6 rounded-3xl border border-white/20">
 <div class="flex justify-between items-center">
 <div>
@@ -141,7 +145,7 @@ include __DIR__ . '/../includes/header.php';
 <div class="min-w-[300px] snap-start bg-white dark:bg-card-dark p-4 rounded-3xl border border-slate-200 dark:border-slate-800 group cursor-pointer hover:shadow-xl transition-all">
 <a href="/My3DStore/?action=product&id=<?php echo $product['id']; ?>">
 <div class="aspect-square bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-hidden mb-4 relative">
-<div class="static-3d-viewer w-full h-full" data-auto-rotate="true" data-rotation-speed="0.5"></div>
+<div class="product-preview-placeholder w-full h-full flex items-center justify-center bg-slate-200 dark:bg-slate-700 text-primary"><span class="material-icons-outlined text-4xl">view_in_ar</span></div>
 <div class="absolute top-3 right-3 bg-white/90 dark:bg-slate-900/90 p-2 rounded-xl shadow-md">
 <span class="material-icons-outlined text-primary">favorite_border</span>
 </div>
@@ -173,7 +177,7 @@ include __DIR__ . '/../includes/header.php';
 <div class="min-w-[300px] snap-start bg-white dark:bg-card-dark p-4 rounded-3xl border border-slate-200 dark:border-slate-800 group cursor-pointer hover:shadow-xl transition-all">
 <a href="/My3DStore/?action=product&id=<?php echo $product['id']; ?>">
 <div class="aspect-square bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-hidden mb-4">
-<div class="static-3d-viewer w-full h-full" data-auto-rotate="true" data-rotation-speed="0.5"></div>
+<div class="product-preview-placeholder w-full h-full flex items-center justify-center bg-slate-200 dark:bg-slate-700 text-primary"><span class="material-icons-outlined text-4xl">view_in_ar</span></div>
 </div>
 <h3 class="font-bold mb-1"><?php echo htmlspecialchars($product['name']); ?></h3>
 <p class="text-sm text-slate-500">Desde <?php echo formatPriceDisplay($product['price']); ?></p>
@@ -203,7 +207,7 @@ include __DIR__ . '/../includes/header.php';
 <div class="min-w-[300px] snap-start bg-white dark:bg-card-dark p-4 rounded-3xl border border-slate-200 dark:border-slate-800 group cursor-pointer hover:shadow-xl transition-all">
 <a href="/My3DStore/?action=product&id=<?php echo $product['id']; ?>">
 <div class="aspect-square bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-hidden mb-4 relative">
-<div class="static-3d-viewer w-full h-full" data-auto-rotate="true" data-rotation-speed="0.5"></div>
+<div class="product-preview-placeholder w-full h-full flex items-center justify-center bg-slate-200 dark:bg-slate-700 text-primary"><span class="material-icons-outlined text-4xl">view_in_ar</span></div>
 <div class="absolute top-3 right-3 bg-white/90 dark:bg-slate-900/90 p-2 rounded-xl shadow-md">
 <span class="material-icons-outlined text-primary">favorite_border</span>
 </div>
@@ -221,7 +225,7 @@ include __DIR__ . '/../includes/header.php';
 </section>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    initStatic3DViewers();
+    // Sin visores 3D en home para evitar límite de contextos WebGL
 });
 </script>
 <?php

@@ -2,9 +2,14 @@
 $pageTitle = 'My3DStore - Personalizador 3D';
 $useTailwindBody = true; // Activar clases Tailwind para esta página
 $loadSTLViewer = true; // Activar carga de Three.js
+$customizeJobId = isset($_GET['job_id']) ? preg_replace('/[^a-zA-Z0-9\-_]/', '', trim($_GET['job_id'])) : '';
+$customizePrompt = isset($_GET['prompt']) ? trim($_GET['prompt']) : '';
+if (mb_strlen($customizePrompt) > 500) {
+    $customizePrompt = mb_substr($customizePrompt, 0, 500);
+}
 include __DIR__ . '/../../includes/header.php';
 ?>
-
+<link rel="stylesheet" href="<?php echo htmlspecialchars(asset('css/ai-chatbot.css')); ?>">
 <style>
     body { font-family: 'Inter', sans-serif; }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -182,6 +187,13 @@ include __DIR__ . '/../../includes/header.php';
             </div>
         </div>
         
+        <!-- Botón Descargar modelo (habilitado cuando hay modelo generado por IA) -->
+        <div class="absolute bottom-24 left-1/2 -translate-x-1/2 z-10">
+            <a id="download-model-btn" href="#" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-600 text-white font-medium opacity-60 pointer-events-none cursor-not-allowed transition-all" title="Genera un modelo para poder descargarlo">
+                <span class="material-icons-outlined text-sm">download</span>
+                Descargar modelo
+            </a>
+        </div>
         <!-- Botón de añadir al carrito -->
         <div class="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-md px-6 z-10">
             <button id="add-to-cart-btn" class="w-full bg-primary hover:bg-blue-700 text-white py-4 px-8 rounded-2xl shadow-xl shadow-primary/20 font-bold flex items-center justify-center gap-3 transition-all transform hover:-translate-y-1 active:scale-95">
@@ -191,8 +203,15 @@ include __DIR__ . '/../../includes/header.php';
         </div>
     </section>
 </main>
+<div id="ai-chatbot" aria-hidden="true"></div>
 
-<script src="/My3DStore/public/js/stl-viewer.js"></script>
+<script>
+    window.CUSTOMIZE_JOB_ID = <?php echo json_encode($customizeJobId); ?>;
+    window.CUSTOMIZE_PROMPT = <?php echo json_encode($customizePrompt, JSON_UNESCAPED_UNICODE); ?>;
+    window.BASE_PATH = '<?php echo addslashes(getBasePath()); ?>';
+</script>
+<script src="<?php echo htmlspecialchars(asset('js/stl-viewer.js')); ?>"></script>
+<script src="<?php echo htmlspecialchars(asset('js/ai-chatbot.js')); ?>"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Precio base
@@ -223,23 +242,101 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Cargar modelo GLB por defecto
-    const glbPath = '/My3DStore/public/glb/pato.glb';
     const loadingDiv = document.getElementById('preview-loading');
-    
-    viewer.loadGLB(glbPath, (progress) => {
-        if (progress.success === false) {
-            if (loadingDiv) {
-                loadingDiv.innerHTML = '<p class="text-red-500">Error al cargar el modelo 3D</p>';
+    const downloadBtn = document.getElementById('download-model-btn');
+
+    // Botón Descargar modelo: habilitado cuando hay modelo generado por IA
+    let currentDownloadJobId = null;
+    function updateDownloadButton(jobId) {
+        currentDownloadJobId = jobId || null;
+        if (downloadBtn) {
+            if (currentDownloadJobId) {
+                downloadBtn.href = (window.BASE_PATH || '/') + 'api/ai3d.php?action=downloadModel&job_id=' + encodeURIComponent(currentDownloadJobId);
+                downloadBtn.classList.remove('opacity-60', 'pointer-events-none', 'cursor-not-allowed');
+                downloadBtn.classList.add('hover:bg-slate-500', 'cursor-pointer');
+                downloadBtn.title = 'Descargar el último modelo generado';
+            } else {
+                downloadBtn.href = '#';
+                downloadBtn.classList.add('opacity-60', 'pointer-events-none', 'cursor-not-allowed');
+                downloadBtn.classList.remove('hover:bg-slate-500', 'cursor-pointer');
+                downloadBtn.title = 'Genera un modelo para poder descargarlo';
             }
-            console.error('Error loading GLB:', progress.error);
-        } else if (progress.success === true) {
-            if (loadingDiv) {
-                loadingDiv.style.display = 'none';
-            }
-            console.log('Modelo GLB cargado exitosamente');
         }
+    }
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', function(e) {
+            if (!currentDownloadJobId) e.preventDefault();
+        });
+    }
+
+    // Inicializar chatbot con visor y callbacks para descarga
+    const chatbot = new AIChatbot('ai-chatbot', viewer, {
+        onModelReady: function(jobId) { updateDownloadButton(jobId); },
+        onViewerCleared: function() { updateDownloadButton(null); }
     });
+
+    // Si hay job_id en la URL: no cargar GLB; hacer polling y cargar modelo en visor
+    if (window.CUSTOMIZE_JOB_ID) {
+        const jobId = window.CUSTOMIZE_JOB_ID;
+        const promptForCatalog = window.CUSTOMIZE_PROMPT || '';
+        if (loadingDiv) {
+            loadingDiv.innerHTML = '<div class="text-center"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div><p class="text-slate-600 dark:text-slate-400">Generando modelo...</p></div>';
+            loadingDiv.style.display = '';
+        }
+        const AI_API = (window.BASE_PATH || '/') + 'api/ai3d.php';
+        const maxAttempts = 150;
+        let attempts = 0;
+        (async function pollAndLoad() {
+            while (attempts < maxAttempts) {
+                try {
+                    const response = await fetch(AI_API + '?action=getJobStatus&job_id=' + encodeURIComponent(jobId));
+                    if (!response.ok) {
+                        if (loadingDiv && attempts === 0) loadingDiv.innerHTML = '<p class="text-slate-600 dark:text-slate-400">Error al conectar. Reintentando...</p>';
+                        attempts++;
+                        await new Promise(function(r) { setTimeout(r, 2000); });
+                        continue;
+                    }
+                    var data;
+                    try { data = await response.json(); } catch (e) {
+                        attempts++;
+                        await new Promise(function(r) { setTimeout(r, 2000); });
+                        continue;
+                    }
+                    if (data.status === 'completed') {
+                        if (loadingDiv) loadingDiv.innerHTML = '<div class="text-center"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div><p class="text-slate-600 dark:text-slate-400">Cargando modelo en el visor...</p></div>';
+                        await chatbot.loadJobInViewer(jobId, promptForCatalog);
+                        updateDownloadButton(jobId);
+                        if (loadingDiv) loadingDiv.style.display = 'none';
+                        return;
+                    }
+                    if (data.status === 'failed') {
+                        if (loadingDiv) {
+                            loadingDiv.innerHTML = '<p class="text-red-500">Error en la generación. ' + (typeof data.error === 'string' ? data.error : '') + '</p>';
+                            loadingDiv.style.display = '';
+                        }
+                        return;
+                    }
+                } catch (err) {
+                    if (loadingDiv && attempts === 0) loadingDiv.innerHTML = '<p class="text-slate-600 dark:text-slate-400">Error al conectar. Reintentando...</p>';
+                }
+                attempts++;
+                await new Promise(function(r) { setTimeout(r, 2000); });
+            }
+            if (loadingDiv) loadingDiv.innerHTML = '<p class="text-slate-600 dark:text-slate-400">Tiempo de espera agotado. Prueba de nuevo más tarde.</p>';
+        })();
+    } else {
+        // Cargar modelo GLB por defecto cuando no hay job_id
+        const glbPath = '<?php echo addslashes(asset('glb/pato.glb')); ?>';
+        viewer.loadGLB(glbPath, (progress) => {
+            if (progress.success === false) {
+                if (loadingDiv) loadingDiv.innerHTML = '<p class="text-red-500">Error al cargar el modelo 3D</p>';
+                console.error('Error loading GLB:', progress.error);
+            } else if (progress.success === true) {
+                if (loadingDiv) loadingDiv.style.display = 'none';
+                console.log('Modelo GLB cargado exitosamente');
+            }
+        });
+    }
 
     // Actualizar precio final
     function updatePrice() {
@@ -297,7 +394,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Botón añadir al carrito
     document.getElementById('add-to-cart-btn')?.addEventListener('click', function() {
         <?php if (!isLoggedIn()): ?>
-            window.location.href = '/My3DStore/?action=login';
+            window.location.href = (window.BASE_PATH || '/') + '?action=login';
         <?php else: ?>
             // Aquí iría la lógica para añadir al carrito
             const width = document.getElementById('width').value;
@@ -310,7 +407,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Crear formulario y enviar
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = '/My3DStore/?action=cart-add';
+            form.action = (window.BASE_PATH || '/') + '?action=cart-add';
             
             const productId = document.createElement('input');
             productId.type = 'hidden';

@@ -19,8 +19,20 @@ class ShapeEController {
     /**
      * Detecta la ruta de Python disponible con soporte CUDA
      * Prioriza Python 3.11/3.12 que tienen mejor soporte CUDA
+     * En Docker, usa la variable de entorno PYTHON_PATH o python3 por defecto
      */
     private function detectPythonPath() {
+        // Si estamos en Docker, usar variable de entorno o python3
+        $pythonPathEnv = getenv('PYTHON_PATH');
+        if ($pythonPathEnv) {
+            return $pythonPathEnv;
+        }
+        
+        // Si estamos en un contenedor Docker (verificar si estamos en /var/www/html)
+        if (file_exists('/.dockerenv') || getenv('DOCKER_CONTAINER')) {
+            return 'python3';
+        }
+        
         // Priorizar Python 3.11 y 3.12 (mejor soporte CUDA)
         $pythonPaths = [
             // Python 3.12 (recomendado para CUDA)

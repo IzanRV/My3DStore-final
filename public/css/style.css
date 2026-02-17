@@ -607,6 +607,15 @@ body {
     margin-bottom: 3rem;
 }
 
+.product-images {
+    min-width: 0; /* permitir que el grid reduzca la columna */
+    min-height: 400px;
+}
+
+.product-images .static-3d-viewer {
+    min-height: 400px;
+}
+
 .product-images img {
     width: 100%;
     border-radius: 12px;

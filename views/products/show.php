@@ -7,7 +7,7 @@ include __DIR__ . '/../../includes/header.php';
 <div class="product-detail">
     <div class="product-detail-container">
         <div class="product-images">
-            <div id="product-detail-3d" class="static-3d-viewer" style="width: 100%; height: 500px;"></div>
+            <div id="product-detail-3d" class="static-3d-viewer" style="width: 100%; height: 500px;" data-model-path="<?php echo htmlspecialchars(productModelAsset($product)); ?>" data-fallback-model-path="<?php echo htmlspecialchars(asset('glb/pato.glb')); ?>"></div>
         </div>
         
         <div class="product-details">

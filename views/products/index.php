@@ -1,7 +1,7 @@
 <?php
 $pageTitle = 'My3DStore - Catálogo de Productos';
 $useTailwindBody = true; // Activar clases Tailwind para esta página
-$loadStatic3D = true; // Cargar modelos 3D estáticos
+$loadStatic3D = true; // Visor 3D solo en los primeros 6 productos (límite WebGL)
 include __DIR__ . '/../../includes/header.php';
 
 // Obtener valores de filtros actuales
@@ -171,16 +171,26 @@ $currentSearch = $_GET['search'] ?? '';
             </div>
         <?php else: ?>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <?php foreach ($products as $product): 
+                <?php 
+                $productIndex = 0;
+                foreach ($products as $product): 
                     $productImage = !empty($product['image_url']) 
                         ? htmlspecialchars($product['image_url']) 
                         : 'https://via.placeholder.com/400x400?text=3D+Product';
                     $productPrice = formatPrice($product['price']);
+                    $showViewer = ($productIndex < 6); // Solo los primeros 6 para no superar límite WebGL
+                    $productIndex++;
                 ?>
                     <div class="bg-card-light dark:bg-card-dark rounded-xl overflow-hidden shadow-md group transition-all hover:shadow-xl hover:-translate-y-1">
                         <div class="relative overflow-hidden aspect-square bg-[#003d7e]">
-                            <a href="/My3DStore/?action=product&id=<?php echo $product['id']; ?>">
-                                <div class="static-3d-viewer w-full h-full" data-auto-rotate="true" data-rotation-speed="0.5"></div>
+                            <a href="/My3DStore/?action=product&id=<?php echo $product['id']; ?>" class="block w-full h-full">
+                                <?php if ($showViewer): ?>
+                                <div class="static-3d-viewer w-full h-full min-h-[200px]" data-model-path="<?php echo htmlspecialchars(productModelAsset($product)); ?>" data-fallback-model-path="<?php echo htmlspecialchars(asset('glb/pato.glb')); ?>" data-auto-rotate="true" data-rotation-speed="0.5"></div>
+                                <?php else: ?>
+                                <div class="w-full h-full flex items-center justify-center text-white/90">
+                                    <span class="material-icons-outlined text-5xl">view_in_ar</span>
+                                </div>
+                                <?php endif; ?>
                             </a>
                             <div class="absolute bottom-4 left-0 right-0 flex justify-center space-x-2 px-2">
                                 <?php if ($product['stock'] > 0 && isLoggedIn()): ?>
@@ -238,7 +248,7 @@ $currentSearch = $_GET['search'] ?? '';
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    initStatic3DViewers();
+    initStatic3DViewers(); // Máximo 6 visores (ver static-3d-viewer.js) para no superar límite WebGL
     
     // Función para manejar checkboxes de materiales (solo uno seleccionado a la vez)
     function updateMaterialFilter(checkbox) {

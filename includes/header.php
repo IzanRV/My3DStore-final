@@ -15,7 +15,7 @@ $pageTitle = $pageTitle ?? 'My3DStore';
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     <!-- CSS personalizado original para páginas existentes - cargado después para tener prioridad -->
-    <link rel="stylesheet" href="/My3DStore/public/css/style.css">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars(asset('css/style.css')); ?>">
     <script>
       tailwind.config = {
         darkMode: "class",
@@ -130,11 +130,12 @@ $pageTitle = $pageTitle ?? 'My3DStore';
     <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/controls/OrbitControls.js"></script>
     <?php endif; ?>
-    <!-- Three.js para modelos 3D estáticos -->
+    <!-- Three.js para modelos 3D estáticos (GLB y STL por producto) -->
     <?php if (isset($loadStatic3D) && $loadStatic3D): ?>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/loaders/STLLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="/My3DStore/public/js/static-3d-viewer.js"></script>
+    <script src="<?php echo htmlspecialchars(asset('js/static-3d-viewer.js')); ?>"></script>
     <?php endif; ?>
 </head>
 <body class="<?php echo isset($useTailwindBody) && $useTailwindBody ? 'bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 transition-colors duration-300' : ''; ?>">
