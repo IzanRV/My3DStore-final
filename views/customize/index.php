@@ -98,9 +98,24 @@ include __DIR__ . '/../../includes/header.php';
                         <button class="w-8 h-8 rounded-full border-2 border-transparent bg-blue-600 hover:scale-110 transition-transform color-btn" data-color="#2563eb"></button>
                         <button class="w-8 h-8 rounded-full border-2 border-transparent bg-purple-500 hover:scale-110 transition-transform color-btn" data-color="#a855f7"></button>
                         <button class="w-8 h-8 rounded-full border-2 border-transparent bg-pink-500 hover:scale-110 transition-transform color-btn" data-color="#ec4899"></button>
-                        <button class="w-8 h-8 rounded-full border-2 border-transparent bg-slate-200 dark:bg-slate-700 flex items-center justify-center hover:scale-110 transition-transform">
+                        <button type="button" id="custom-color-swatch" class="color-btn w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform hidden" data-color="" title="Color personalizado"></button>
+                        <button type="button" id="open-custom-color-btn" class="w-8 h-8 rounded-full border-2 border-transparent bg-slate-200 dark:bg-slate-700 flex items-center justify-center hover:scale-110 transition-transform hover:border-primary/50" title="Elegir otro color">
                             <span class="material-icons-outlined text-slate-500 text-sm">add</span>
                         </button>
+                    </div>
+                </div>
+                
+                <!-- Modal elegir color -->
+                <div id="custom-color-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/40" aria-hidden="true">
+                    <div class="custom-color-popover bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-5 border border-slate-200 dark:border-slate-700 max-w-[280px]" role="dialog" aria-label="Elegir color">
+                        <p class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Elegir color</p>
+                        <div class="flex flex-col gap-4">
+                            <input type="color" id="custom-color-input" value="#003d7a" class="w-full h-12 rounded-xl border-2 border-slate-200 dark:border-slate-600 cursor-pointer bg-transparent">
+                            <div class="flex gap-2 justify-end">
+                                <button type="button" id="custom-color-cancel" class="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">Cancelar</button>
+                                <button type="button" id="custom-color-apply" class="px-4 py-2 rounded-xl bg-primary text-white hover:opacity-90">Aplicar</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -142,18 +157,34 @@ include __DIR__ . '/../../includes/header.php';
                     </div>
                 </div>
                 
-                <!-- Añadir Imagen -->
+                <!-- Añadir Imagen / Logo -->
                 <div>
                     <div class="flex items-center gap-2 text-primary font-semibold text-sm uppercase tracking-wider mb-4">
                         <span class="material-icons-outlined text-sm">add_photo_alternate</span>
                         Añadir Imagen
                     </div>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-2">Añade un logo al modelo 3D en el lado que elijas.</p>
                     <label for="logo" class="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-6 flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-colors cursor-pointer group">
-                        <input type="file" id="logo" name="logo" accept="image/*" class="hidden" />
+                        <input type="file" id="logo" name="logo" accept="image/png,image/jpeg,image/jpg,image/gif" class="hidden" />
                         <span class="material-icons-outlined text-slate-400 group-hover:text-primary">upload_file</span>
                         <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Subir imagen</p>
                         <p class="text-[9px] text-slate-400 uppercase">PNG, JPG Máx 10MB</p>
                     </label>
+                    <div id="logo-options-wrap" class="hidden mt-3 space-y-3">
+                        <p class="text-xs font-semibold text-slate-600 dark:text-slate-300">¿Dónde colocar el logo?</p>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button" class="logo-side-btn px-3 py-2 rounded-lg border-2 border-primary bg-primary/10 text-xs font-medium hover:border-primary/50 transition-colors" data-side="front">Frente</button>
+                            <button type="button" class="logo-side-btn px-3 py-2 rounded-lg border-2 border-slate-200 dark:border-slate-700 text-xs font-medium hover:border-primary/50 transition-colors" data-side="back">Atrás</button>
+                            <button type="button" class="logo-side-btn px-3 py-2 rounded-lg border-2 border-slate-200 dark:border-slate-700 text-xs font-medium hover:border-primary/50 transition-colors" data-side="left">Izquierda</button>
+                            <button type="button" class="logo-side-btn px-3 py-2 rounded-lg border-2 border-slate-200 dark:border-slate-700 text-xs font-medium hover:border-primary/50 transition-colors" data-side="right">Derecha</button>
+                            <button type="button" class="logo-side-btn px-3 py-2 rounded-lg border-2 border-slate-200 dark:border-slate-700 text-xs font-medium hover:border-primary/50 transition-colors" data-side="top">Arriba</button>
+                            <button type="button" class="logo-side-btn px-3 py-2 rounded-lg border-2 border-slate-200 dark:border-slate-700 text-xs font-medium hover:border-primary/50 transition-colors" data-side="bottom">Abajo</button>
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="button" id="logo-apply-btn" class="flex-1 px-3 py-2 rounded-lg bg-primary text-white text-xs font-medium hover:opacity-90">Aplicar logo</button>
+                            <button type="button" id="logo-remove-btn" class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 text-xs font-medium hover:bg-slate-100 dark:hover:bg-slate-700">Quitar logo</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -161,15 +192,15 @@ include __DIR__ . '/../../includes/header.php';
     
     <!-- Zona central extendida - Visor 3D -->
     <section class="flex-1 relative bg-[#e2e8f0] dark:bg-slate-900 overflow-hidden flex items-center justify-center p-8">
-        <!-- Controles de zoom y rotación -->
-        <div class="absolute top-6 left-6 flex flex-col gap-2 z-50">
-            <button id="zoom-in-btn" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-lg flex items-center justify-center hover:text-primary transition-colors z-50">
+        <!-- Controles de zoom y rotación (z-40 para quedar por debajo del header z-50) -->
+        <div class="absolute top-6 left-6 flex flex-col gap-2 z-40">
+            <button id="zoom-in-btn" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-lg flex items-center justify-center hover:text-primary transition-colors">
                 <span class="material-icons-outlined">zoom_in</span>
             </button>
-            <button id="zoom-out-btn" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-lg flex items-center justify-center hover:text-primary transition-colors z-50">
+            <button id="zoom-out-btn" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-lg flex items-center justify-center hover:text-primary transition-colors">
                 <span class="material-icons-outlined">zoom_out</span>
             </button>
-            <button id="reset-view-btn" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-lg flex items-center justify-center hover:text-primary transition-colors z-50">
+            <button id="reset-view-btn" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-lg flex items-center justify-center hover:text-primary transition-colors">
                 <span class="material-icons-outlined">360</span>
             </button>
         </div>
@@ -307,6 +338,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         await chatbot.loadJobInViewer(jobId, promptForCatalog);
                         updateDownloadButton(jobId);
                         if (loadingDiv) loadingDiv.style.display = 'none';
+                        applyDimensionsToViewer();
                         return;
                     }
                     if (data.status === 'failed') {
@@ -333,10 +365,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Error loading GLB:', progress.error);
             } else if (progress.success === true) {
                 if (loadingDiv) loadingDiv.style.display = 'none';
-                console.log('Modelo GLB cargado exitosamente');
+                applyDimensionsToViewer();
             }
         });
     }
+
+    function applyDimensionsToViewer() {
+        if (!viewer || !viewer.setDimensions) return;
+        const w = document.getElementById('width')?.value || 60;
+        const h = document.getElementById('height')?.value || 85;
+        const d = document.getElementById('depth')?.value || 45;
+        viewer.setDimensions(parseInt(w, 10), parseInt(h, 10), parseInt(d, 10));
+    }
+
+    // Dimensiones: aplicar al modelo 3D al mover los sliders
+    ['width', 'height', 'depth'].forEach(function(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', function() {
+            document.getElementById(id + '-value').textContent = this.value + 'mm';
+            applyDimensionsToViewer();
+        });
+    });
 
     // Actualizar precio final
     function updatePrice() {
@@ -346,20 +396,55 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Selectores de color
     const colorButtons = document.querySelectorAll('.color-btn');
+    function setActiveColorButton(btn) {
+        document.querySelectorAll('.color-btn').forEach(b => {
+            b.classList.remove('active', 'border-primary', 'ring-2', 'ring-primary/20');
+            b.classList.add('border-transparent');
+        });
+        btn.classList.add('active', 'border-primary', 'ring-2', 'ring-primary/20');
+        btn.classList.remove('border-transparent');
+        const color = btn.dataset.color;
+        if (color) {
+            const hex = color.startsWith('#') ? color : '#' + color;
+            const num = parseInt(hex.slice(1), 16);
+            if (!isNaN(num)) viewer.setColor(num);
+            else if (colorMap[color]) viewer.setColor(colorMap[color]);
+        }
+    }
     colorButtons.forEach(btn => {
         btn.addEventListener('click', function() {
-            colorButtons.forEach(b => {
-                b.classList.remove('active', 'border-primary', 'ring-2', 'ring-primary/20');
-                b.classList.add('border-transparent');
-            });
-            this.classList.add('active', 'border-primary', 'ring-2', 'ring-primary/20');
-            this.classList.remove('border-transparent');
-            
-            const color = this.dataset.color;
-            if (color && colorMap[color]) {
-                viewer.setColor(colorMap[color]);
-            }
+            setActiveColorButton(this);
         });
+    });
+
+    // Modal elegir cualquier color
+    const customColorModal = document.getElementById('custom-color-modal');
+    const customColorInput = document.getElementById('custom-color-input');
+    const customColorSwatch = document.getElementById('custom-color-swatch');
+    document.getElementById('open-custom-color-btn')?.addEventListener('click', function() {
+        const current = document.querySelector('.color-btn.active')?.dataset.color;
+        customColorInput.value = (current && /^#[0-9A-Fa-f]{6}$/.test(current)) ? current : '#003d7a';
+        customColorModal.classList.remove('hidden');
+        customColorModal.classList.add('flex');
+        customColorModal.setAttribute('aria-hidden', 'false');
+    });
+    function closeCustomColorModal() {
+        customColorModal.classList.add('hidden');
+        customColorModal.classList.remove('flex');
+        customColorModal.setAttribute('aria-hidden', 'true');
+    }
+    document.getElementById('custom-color-cancel')?.addEventListener('click', closeCustomColorModal);
+    customColorModal?.addEventListener('click', function(e) {
+        if (e.target === customColorModal) closeCustomColorModal();
+    });
+    document.getElementById('custom-color-apply')?.addEventListener('click', function() {
+        const hex = customColorInput.value;
+        if (!hex) return;
+        customColorSwatch.style.backgroundColor = hex;
+        customColorSwatch.dataset.color = hex;
+        customColorSwatch.classList.remove('hidden');
+        setActiveColorButton(customColorSwatch);
+        closeCustomColorModal();
     });
 
     // Selectores de material
@@ -376,6 +461,53 @@ document.addEventListener('DOMContentLoaded', function() {
             materialPrice = parseFloat(this.dataset.price) || 0;
             updatePrice();
         });
+    });
+
+    // Logo en modelo 3D
+    let currentLogoUrl = null;
+    let selectedLogoSide = 'front';
+    const logoOptionsWrap = document.getElementById('logo-options-wrap');
+    const logoInput = document.getElementById('logo');
+    document.querySelectorAll('.logo-side-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.logo-side-btn').forEach(b => {
+                b.classList.remove('border-primary', 'bg-primary/10');
+                b.classList.add('border-slate-200', 'dark:border-slate-700');
+            });
+            this.classList.add('border-primary', 'bg-primary/10');
+            this.classList.remove('border-slate-200', 'dark:border-slate-700');
+            selectedLogoSide = this.dataset.side || 'front';
+        });
+    });
+    if (logoInput) {
+        logoInput.addEventListener('change', function() {
+            const file = this.files && this.files[0];
+            if (!file) {
+                logoOptionsWrap.classList.add('hidden');
+                if (currentLogoUrl) URL.revokeObjectURL(currentLogoUrl);
+                currentLogoUrl = null;
+                return;
+            }
+            if (file.size > 10 * 1024 * 1024) {
+                alert('El archivo no puede superar 10MB.');
+                this.value = '';
+                return;
+            }
+            if (currentLogoUrl) URL.revokeObjectURL(currentLogoUrl);
+            currentLogoUrl = URL.createObjectURL(file);
+            logoOptionsWrap.classList.remove('hidden');
+        });
+    }
+    document.getElementById('logo-apply-btn')?.addEventListener('click', function() {
+        if (!currentLogoUrl || !viewer) return;
+        if (viewer.logoMesh) {
+            if (viewer.setLogoSide) viewer.setLogoSide(selectedLogoSide);
+        } else {
+            if (viewer.addLogo) viewer.addLogo(currentLogoUrl, selectedLogoSide);
+        }
+    });
+    document.getElementById('logo-remove-btn')?.addEventListener('click', function() {
+        if (viewer && viewer.removeLogo) viewer.removeLogo();
     });
 
     // Controles de zoom y vista

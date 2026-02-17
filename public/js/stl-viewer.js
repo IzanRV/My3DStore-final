@@ -23,6 +23,11 @@ class STLViewer {
         this.controls = null;
         this.model = null;
         this.animationId = null;
+        this.logoMesh = null;
+        this.logoTexture = null;
+        this.logoSide = null;
+        this.modelBaseSize = null;
+        this.modelBaseCenter = null;
 
         this.init();
     }
@@ -121,16 +126,18 @@ class STLViewer {
                     this.model.rotation.z = rot.z || 0;
                 }
                 
-                // Calcular escala para que quepa en la vista
+                // Guardar tamaño y centro base (antes de escala) para dimensiones en mm
                 const box = new THREE.Box3().setFromObject(this.model);
                 const size = box.getSize(new THREE.Vector3());
-                const maxDim = Math.max(size.x, size.y, size.z);
-                const scale = 50 / maxDim;
-                this.model.scale.multiplyScalar(scale);
-
-                // Centrar modelo
                 const center = box.getCenter(new THREE.Vector3());
-                this.model.position.sub(center.multiplyScalar(scale));
+                this.modelBaseSize = size.clone();
+                this.modelBaseCenter = center.clone();
+
+                // Calcular escala para que quepa en la vista (factor 40 para evitar que se vea demasiado alto)
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const scale = 40 / maxDim;
+                this.model.scale.multiplyScalar(scale);
+                this.model.position.sub(center.clone().multiplyScalar(scale));
 
                 this.scene.add(this.model);
 
@@ -176,18 +183,17 @@ class STLViewer {
                     this.model.rotation.z = rot.z || 0;
                 }
                 
-                // Calcular escala para que quepa en la vista
                 const box = new THREE.Box3().setFromObject(this.model);
                 const size = box.getSize(new THREE.Vector3());
+                const center = box.getCenter(new THREE.Vector3());
+                this.modelBaseSize = size.clone();
+                this.modelBaseCenter = center.clone();
+
                 const maxDim = Math.max(size.x, size.y, size.z);
-                
                 if (maxDim > 0) {
-                    const scale = 50 / maxDim;
+                    const scale = 40 / maxDim;
                     this.model.scale.multiplyScalar(scale);
-                    
-                    // Centrar modelo
-                    const center = box.getCenter(new THREE.Vector3());
-                    this.model.position.sub(center.multiplyScalar(scale));
+                    this.model.position.sub(center.clone().multiplyScalar(scale));
                 }
 
                 this.scene.add(this.model);
@@ -234,7 +240,7 @@ class STLViewer {
         const center = box.getCenter(new THREE.Vector3());
 
         const maxDim = Math.max(size.x, size.y, size.z);
-        const distance = maxDim * 2;
+        const distance = maxDim * 2.8;
 
         this.camera.position.set(
             center.x + distance * 0.5,
@@ -277,6 +283,111 @@ class STLViewer {
         }
     }
 
+    setDimensions(widthMm, heightMm, depthMm) {
+        if (!this.model || !this.modelBaseSize || this.modelBaseSize.x <= 0 || this.modelBaseSize.y <= 0 || this.modelBaseSize.z <= 0) return;
+        const w = Math.max(1, Number(widthMm) || 10);
+        const h = Math.max(1, Number(heightMm) || 10);
+        const d = Math.max(1, Number(depthMm) || 10);
+        this.model.scale.set(
+            w / this.modelBaseSize.x,
+            h / this.modelBaseSize.y,
+            d / this.modelBaseSize.z
+        );
+        if (this.modelBaseCenter) {
+            this.model.position.set(
+                -this.modelBaseCenter.x * this.model.scale.x,
+                -this.modelBaseCenter.y * this.model.scale.y,
+                -this.modelBaseCenter.z * this.model.scale.z
+            );
+        }
+    }
+
+    _getLogoSideConfig(side) {
+        const o = 0.02;
+        const sides = {
+            front:  { offset: new THREE.Vector3(0, 0, 0.5 + o), normal: new THREE.Vector3(0, 0, 1) },
+            back:   { offset: new THREE.Vector3(0, 0, -0.5 - o), normal: new THREE.Vector3(0, 0, -1) },
+            right:  { offset: new THREE.Vector3(0.5 + o, 0, 0), normal: new THREE.Vector3(1, 0, 0) },
+            left:   { offset: new THREE.Vector3(-0.5 - o, 0, 0), normal: new THREE.Vector3(-1, 0, 0) },
+            top:    { offset: new THREE.Vector3(0, 0.5 + o, 0), normal: new THREE.Vector3(0, 1, 0) },
+            bottom: { offset: new THREE.Vector3(0, -0.5 - o, 0), normal: new THREE.Vector3(0, -1, 0) }
+        };
+        return sides[side] || sides.front;
+    }
+
+    addLogo(imageUrl, side) {
+        if (!this.model || !this.scene) return;
+        this.removeLogo();
+        const self = this;
+        const loader = new THREE.TextureLoader();
+        loader.load(imageUrl, function(texture) {
+            if (THREE.SRGBColorSpace) texture.colorSpace = THREE.SRGBColorSpace;
+            else if (THREE.sRGBEncoding) texture.encoding = THREE.sRGBEncoding;
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            self.logoTexture = texture;
+            const box = new THREE.Box3().setFromObject(self.model);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const planeSize = Math.max(maxDim * 0.25, 1);
+            const aspect = texture.image ? texture.image.width / texture.image.height : 1;
+            const w = aspect >= 1 ? planeSize : planeSize * aspect;
+            const h = aspect >= 1 ? planeSize / aspect : planeSize;
+            const geometry = new THREE.PlaneGeometry(w, h);
+            const material = new THREE.MeshBasicMaterial({
+                map: texture,
+                transparent: true,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            });
+            self.logoMesh = new THREE.Mesh(geometry, material);
+            self.logoSide = side || 'front';
+            self.scene.add(self.logoMesh);
+            self._updateLogoPosition();
+        }, undefined, function(err) {
+            console.error('Error loading logo texture:', err);
+        });
+    }
+
+    _updateLogoPosition() {
+        if (!this.logoMesh || !this.model) return;
+        const box = new THREE.Box3().setFromObject(this.model);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        const cfg = this._getLogoSideConfig(this.logoSide);
+        const worldOffset = new THREE.Vector3(
+            cfg.offset.x * size.x,
+            cfg.offset.y * size.y,
+            cfg.offset.z * size.z
+        );
+        this.logoMesh.position.copy(center).add(worldOffset);
+        this.logoMesh.lookAt(center.x + cfg.normal.x, center.y + cfg.normal.y, center.z + cfg.normal.z);
+    }
+
+    removeLogo() {
+        if (this.logoMesh) {
+            this.scene.remove(this.logoMesh);
+            if (this.logoMesh.geometry) this.logoMesh.geometry.dispose();
+            if (this.logoMesh.material) {
+                if (this.logoMesh.material.map) this.logoMesh.material.map.dispose();
+                this.logoMesh.material.dispose();
+            }
+            this.logoMesh = null;
+        }
+        if (this.logoTexture) {
+            this.logoTexture.dispose();
+            this.logoTexture = null;
+        }
+        this.logoSide = null;
+    }
+
+    setLogoSide(side) {
+        if (!this.logoMesh) return;
+        this.logoSide = side || 'front';
+        this._updateLogoPosition();
+    }
+
     resetView() {
         if (this.model) {
             // Restaurar rotación inicial si existe
@@ -309,6 +420,9 @@ class STLViewer {
         if (this.controls) {
             this.controls.update();
         }
+        if (this.logoMesh && this.model) {
+            this._updateLogoPosition();
+        }
         
         if (this.renderer && this.scene && this.camera) {
             this.renderer.render(this.scene, this.camera);
@@ -319,6 +433,7 @@ class STLViewer {
         if (this.animationId) {
             cancelAnimationFrame(this.animationId);
         }
+        this.removeLogo();
 
         if (this.model) {
             this.scene.remove(this.model);
