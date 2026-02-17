@@ -16,27 +16,50 @@ if (!$user) {
         <div class="account-info">
             <h2>Información Personal</h2>
             
-            <div class="info-section">
-                <div class="info-item">
-                    <label>Nombre:</label>
-                    <span><?php echo htmlspecialchars(trim($user['name'] ?? '') ?: 'No especificado'); ?></span>
+            <form method="POST" action="<?php echo htmlspecialchars(url('account-update')); ?>" id="accountForm">
+                <input type="hidden" name="name" value="<?php echo htmlspecialchars($user['name'] ?? ''); ?>">
+                <div class="info-section">
+                    <div class="info-item">
+                        <label>Nombre:</label>
+                        <span><?php echo htmlspecialchars(trim($user['name'] ?? '') ?: 'No especificado'); ?></span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <label>Email:</label>
+                        <span><?php echo htmlspecialchars(trim($user['email'] ?? '') ?: 'No especificado'); ?></span>
+                    </div>
+                    
+                    <div class="info-item" id="phone-row">
+                        <label>Teléfono:</label>
+                        <div class="info-value-wrap">
+                            <span class="info-display" id="phone-display"><?php echo htmlspecialchars(trim($user['phone'] ?? '')); ?></span>
+                            <span class="info-display info-empty" id="phone-empty" style="<?php echo trim($user['phone'] ?? '') !== '' ? 'display:none' : ''; ?>">—</span>
+                            <button type="button" class="btn-add" id="phone-add-btn" data-field="phone" style="<?php echo trim($user['phone'] ?? '') !== '' ? 'display:none' : ''; ?>">Añadir</button>
+                            <button type="button" class="btn-edit" id="phone-edit-btn" data-field="phone" style="<?php echo trim($user['phone'] ?? '') === '' ? 'display:none' : ''; ?>">Editar</button>
+                            <div class="info-edit-wrap" id="phone-edit-wrap" style="display:none;">
+                                <input type="tel" name="phone" id="phone-input" class="info-input" value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>" placeholder="Ej: +34 612 345 678" maxlength="50">
+                                <button type="submit" class="btn-save">Guardar</button>
+                                <button type="button" class="btn-cancel" data-field="phone">Cancelar</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item" id="address-row">
+                        <label>Dirección:</label>
+                        <div class="info-value-wrap">
+                            <span class="info-display" id="address-display" style="<?php echo trim($user['address'] ?? '') === '' ? 'display:none' : ''; ?>"><?php echo nl2br(htmlspecialchars($user['address'] ?? '')); ?></span>
+                            <span class="info-display info-empty" id="address-empty" style="<?php echo trim($user['address'] ?? '') !== '' ? 'display:none' : ''; ?>">—</span>
+                            <button type="button" class="btn-add" id="address-add-btn" data-field="address" style="<?php echo trim($user['address'] ?? '') !== '' ? 'display:none' : ''; ?>">Añadir</button>
+                            <button type="button" class="btn-edit" id="address-edit-btn" data-field="address" style="<?php echo trim($user['address'] ?? '') === '' ? 'display:none' : ''; ?>">Editar</button>
+                            <div class="info-edit-wrap" id="address-edit-wrap" style="display:none;">
+                                <textarea name="address" id="address-input" class="info-input info-textarea" placeholder="Calle, número, código postal, ciudad" rows="2"><?php echo htmlspecialchars($user['address'] ?? ''); ?></textarea>
+                                <button type="submit" class="btn-save">Guardar</button>
+                                <button type="button" class="btn-cancel" data-field="address">Cancelar</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="info-item">
-                    <label>Email:</label>
-                    <span><?php echo htmlspecialchars(trim($user['email'] ?? '') ?: 'No especificado'); ?></span>
-                </div>
-                
-                <div class="info-item">
-                    <label>Teléfono:</label>
-                    <span><?php echo htmlspecialchars(trim($user['phone'] ?? '') ?: 'No especificado'); ?></span>
-                </div>
-                
-                <div class="info-item">
-                    <label>Dirección:</label>
-                    <span><?php echo nl2br(htmlspecialchars(trim($user['address'] ?? '') ?: 'No especificado')); ?></span>
-                </div>
-            </div>
+            </form>
             
             <div class="account-actions">
                 <a href="<?php echo url('orders'); ?>" class="btn btn-primary">Ver Mis Pedidos</a>
@@ -101,6 +124,85 @@ if (!$user) {
     text-align: right;
 }
 
+.info-value-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.info-display {
+    color: var(--text-light);
+}
+.info-display.info-empty {
+    color: var(--gray-medium);
+}
+
+.btn-add, .btn-edit {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid var(--blue-primary);
+    background: #fff;
+    color: var(--blue-primary);
+    font-weight: 500;
+}
+.btn-add:hover, .btn-edit:hover {
+    background: var(--blue-primary);
+    color: #fff;
+}
+
+.info-edit-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    flex: 1;
+    justify-content: flex-end;
+}
+
+.info-input {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--gray-medium);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    min-width: 180px;
+}
+.info-textarea {
+    min-width: 240px;
+    resize: vertical;
+}
+
+.btn-save {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+    background: var(--blue-primary);
+    color: #fff;
+    font-weight: 500;
+}
+.btn-save:hover {
+    opacity: 0.9;
+}
+
+.btn-cancel {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid var(--gray-medium);
+    background: #f5f5f5;
+    color: var(--text-dark);
+}
+.btn-cancel:hover {
+    background: #eee;
+}
+
 .account-actions {
     display: flex;
     gap: 1rem;
@@ -161,5 +263,72 @@ if (!$user) {
     }
 }
 </style>
+
+<script>
+(function() {
+    var form = document.getElementById('accountForm');
+    if (!form) return;
+
+    function showEdit(field) {
+        var wrap = document.getElementById(field + '-edit-wrap');
+        var display = document.getElementById(field + '-display');
+        var empty = document.getElementById(field + '-empty');
+        var addBtn = document.getElementById(field + '-add-btn');
+        var editBtn = document.getElementById(field + '-edit-btn');
+        var input = document.getElementById(field + '-input');
+        if (!wrap || !input) return;
+        wrap.style.display = 'flex';
+        if (display) display.style.display = 'none';
+        if (empty) empty.style.display = 'none';
+        if (addBtn) addBtn.style.display = 'none';
+        if (editBtn) editBtn.style.display = 'none';
+        input.focus();
+    }
+
+    function escapeHtml(s) {
+        var div = document.createElement('div');
+        div.textContent = s;
+        return div.innerHTML;
+    }
+
+    function hideEdit(field) {
+        var wrap = document.getElementById(field + '-edit-wrap');
+        var display = document.getElementById(field + '-display');
+        var empty = document.getElementById(field + '-empty');
+        var addBtn = document.getElementById(field + '-add-btn');
+        var editBtn = document.getElementById(field + '-edit-btn');
+        var input = document.getElementById(field + '-input');
+        if (!wrap || !input) return;
+        wrap.style.display = 'none';
+        var val = (input.value || '').trim();
+        if (field === 'address') {
+            if (display) {
+                display.innerHTML = val ? escapeHtml(val).replace(/\n/g, '<br>') : '';
+                display.style.display = val ? '' : 'none';
+            }
+            if (empty) empty.style.display = val ? 'none' : '';
+            if (addBtn) addBtn.style.display = val ? 'none' : '';
+            if (editBtn) editBtn.style.display = val ? '' : 'none';
+        } else {
+            if (display) {
+                display.textContent = val || '';
+                display.style.display = val ? '' : 'none';
+            }
+            if (empty) empty.style.display = val ? 'none' : '';
+            if (addBtn) addBtn.style.display = val ? 'none' : '';
+            if (editBtn) editBtn.style.display = val ? '' : 'none';
+        }
+    }
+
+    ['phone', 'address'].forEach(function(field) {
+        var addBtn = document.getElementById(field + '-add-btn');
+        var editBtn = document.getElementById(field + '-edit-btn');
+        var cancelBtn = form.querySelector('.btn-cancel[data-field="' + field + '"]');
+        if (addBtn) addBtn.addEventListener('click', function() { showEdit(field); });
+        if (editBtn) editBtn.addEventListener('click', function() { showEdit(field); });
+        if (cancelBtn) cancelBtn.addEventListener('click', function() { hideEdit(field); });
+    });
+})();
+</script>
 
 <?php include __DIR__ . '/../../includes/footer.php'; ?>

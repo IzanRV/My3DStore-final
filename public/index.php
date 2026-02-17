@@ -60,6 +60,29 @@ switch ($action) {
         }
         break;
 
+    case 'account-update':
+        if (!isLoggedIn() || $_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ' . url('login'));
+            exit;
+        }
+        require_once __DIR__ . '/../models/User.php';
+        $userModel = new User();
+        $user = $userModel->findById($_SESSION['user_id']);
+        if (!$user) {
+            header('Location: ' . url('login'));
+            exit;
+        }
+        $name = trim($_POST['name'] ?? $user['name'] ?? '');
+        $phone = trim($_POST['phone'] ?? $user['phone'] ?? '');
+        $address = trim($_POST['address'] ?? $user['address'] ?? '');
+        if ($userModel->update((int) $_SESSION['user_id'], $name, $address, $phone)) {
+            setFlashMessage('Datos actualizados correctamente.', 'success');
+        } else {
+            setFlashMessage('Error al actualizar los datos.', 'error');
+        }
+        header('Location: ' . url('account'));
+        exit;
+
     case 'contact':
         // Por ahora solo visual
         setFlashMessage('Gracias por tu mensaje. Te contactaremos pronto.', 'success');
