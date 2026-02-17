@@ -121,11 +121,14 @@ class Product {
     }
 
     /**
-     * Actualiza el campo dimensions (p. ej. nombre de archivo STL para productos generados por IA)
+     * Actualiza dimensions (nombre de archivo STL/GLB) y stl_url (ruta para la URL)
      */
     public function updateDimensions($id, $dimensions) {
-        $stmt = $this->db->prepare("UPDATE products SET dimensions = ? WHERE id = ?");
-        $stmt->bind_param("si", $dimensions, $id);
+        $stlUrl = ($dimensions !== '' && (strpos($dimensions, '.stl') !== false || strpos($dimensions, '.glb') !== false))
+            ? ('stl/' . $dimensions)
+            : null;
+        $stmt = $this->db->prepare("UPDATE products SET dimensions = ?, stl_url = ? WHERE id = ?");
+        $stmt->bind_param("ssi", $dimensions, $stlUrl, $id);
         return $stmt->execute();
     }
 }

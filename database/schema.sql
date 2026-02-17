@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS products (
     description TEXT,
     price DECIMAL(10, 2) NOT NULL,
     image_url VARCHAR(500),
+    stl_url VARCHAR(500),
     stock INT DEFAULT 0,
     category VARCHAR(100),
     material VARCHAR(100),

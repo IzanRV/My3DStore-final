@@ -20,7 +20,8 @@ function getBasePath() {
             }
             $basePath = rtrim($scriptPath, '/') . '/';
             if ($basePath === '/') {
-                $basePath = '/My3DStore/';
+                // App en raíz (ej. localhost:8081/): usar / para que asset() y enlaces coincidan
+                $basePath = '/';
             }
         }
     }
@@ -121,12 +122,19 @@ function getCartCount() {
 }
 
 function asset($path) {
-    // Generar ruta correcta para assets (CSS, JS, imágenes, GLB)
-    // En Docker, Nginx tiene root=public, así que las URLs son /js/..., /glb/... (sin /public/)
-    // En WAMP, la app está en /My3DStore/, así que /My3DStore/public/...
-    $basePath = (file_exists('/.dockerenv') || getenv('DOCKER_CONTAINER')) 
-        ? '/' 
-        : '/My3DStore/public/';
+    // Generar ruta correcta para assets (CSS, JS, imágenes, STL, GLB)
+    // Docker o PHP -S con root=public: base '/' → /stl/..., /images/... (se sirven desde public/)
+    // WAMP con app en /My3DStore/: script en /My3DStore/public/ → base /My3DStore/public/
+    if (file_exists('/.dockerenv') || getenv('DOCKER_CONTAINER')) {
+        $basePath = '/';
+    } else {
+        $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/'));
+        $basePath = rtrim($scriptDir, '/') . '/';
+        if ($basePath === '/') {
+            // App servida desde raíz (ej. localhost:8081/ con -t public): assets en /
+            $basePath = '/';
+        }
+    }
     return $basePath . ltrim($path, '/');
 }
 
@@ -139,6 +147,10 @@ function asset($path) {
 function productModelAsset($product) {
     if (!is_array($product)) {
         return asset('glb/pato.glb');
+    }
+    $stlUrl = isset($product['stl_url']) ? trim($product['stl_url']) : '';
+    if ($stlUrl !== '' && (strpos($stlUrl, '.stl') !== false || strpos($stlUrl, '.glb') !== false)) {
+        return asset($stlUrl);
     }
     $d = isset($product['dimensions']) ? trim($product['dimensions']) : '';
     if ($d !== '' && (strpos($d, '.stl') !== false || strpos($d, '.glb') !== false)) {
@@ -159,11 +171,8 @@ function productModelAsset($product) {
 }
 
 function url($path = '', $params = []) {
-    // Generar URL correcta para la aplicación
-    // En Docker, usar ruta relativa; en WAMP, usar ruta con /My3DStore/
-    $baseUrl = (file_exists('/.dockerenv') || getenv('DOCKER_CONTAINER')) 
-        ? '/' 
-        : '/My3DStore/';
+    // Generar URL correcta para la aplicación (misma base que asset/getBasePath para localhost:8081, etc.)
+    $baseUrl = getBasePath();
     $url = $baseUrl;
     
     if (!empty($path)) {
