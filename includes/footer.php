@@ -1,12 +1,4 @@
     </main>
-    
-    <!-- Floating Action Button (Chatbot) -->
-    <button class="fixed bottom-8 right-8 w-16 h-16 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-all z-50 group">
-        <span class="material-icons-outlined text-3xl">smart_toy</span>
-        <div class="absolute right-20 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-4 py-2 rounded-2xl shadow-xl text-sm font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-slate-100 dark:border-slate-700">
-            ¿En qué puedo ayudarte?
-        </div>
-    </button>
 
     <footer class="bg-primary text-white py-20">
         <div class="max-w-7xl mx-auto px-4">
