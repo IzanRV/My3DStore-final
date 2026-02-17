@@ -31,19 +31,19 @@ class CartController {
             
             if ($productId <= 0) {
                 setFlashMessage('Producto inválido', 'error');
-                redirect('/My3DStore/?action=products');
+                redirect(url('products'));
             }
             
             $product = $this->productModel->findById($productId);
             
             if (!$product) {
                 setFlashMessage('Producto no encontrado', 'error');
-                redirect('/My3DStore/?action=products');
+                redirect(url('products'));
             }
             
             if ($product['stock'] < $quantity) {
                 setFlashMessage('Stock insuficiente', 'error');
-                redirect("/My3DStore/?action=product&id=$productId");
+                redirect(url('product', ['id' => $productId]));
             }
             
             $userId = $_SESSION['user_id'];
@@ -54,7 +54,7 @@ class CartController {
                 setFlashMessage('Error al añadir producto al carrito', 'error');
             }
             
-            redirect("/My3DStore/public/index.php?action=product&id=$productId");
+            redirect(url('product', ['id' => $productId]));
         }
     }
 
@@ -73,7 +73,7 @@ class CartController {
             }
         }
         
-        redirect('/My3DStore/?action=cart');
+        redirect(url('cart'));
     }
 
     public function remove() {
@@ -90,7 +90,7 @@ class CartController {
             }
         }
         
-        redirect('/My3DStore/?action=cart');
+        redirect(url('cart'));
     }
 }
 
