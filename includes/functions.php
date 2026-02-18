@@ -124,18 +124,24 @@ function getCartCount() {
 function asset($path) {
     // Generar ruta correcta para assets (CSS, JS, imágenes, STL, GLB)
     // Docker o PHP -S con root=public: base '/' → /stl/..., /images/... (se sirven desde public/)
-    // WAMP con app en /My3DStore/: script en /My3DStore/public/ → base /My3DStore/public/
+    // Si la entrada es index.php en la raíz del proyecto (ej. /My3DStore/index.php), los archivos
+    // están en public/ → hay que devolver /My3DStore/public/stl/... para que el STL cargue.
     if (file_exists('/.dockerenv') || getenv('DOCKER_CONTAINER')) {
         $basePath = '/';
     } else {
         $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/'));
         $basePath = rtrim($scriptDir, '/') . '/';
         if ($basePath === '/') {
-            // App servida desde raíz (ej. localhost:8081/ con -t public): assets en /
             $basePath = '/';
         }
     }
-    return $basePath . ltrim($path, '/');
+    $path = ltrim($path, '/');
+    // Cuando la app se sirve desde la raíz del proyecto (ej. /My3DStore/index.php), los assets
+    // están en la carpeta public/; si basePath no termina en /public/, anteponer public/
+    if ($basePath !== '/' && substr(rtrim($basePath, '/'), -7) !== '/public') {
+        $path = 'public/' . $path;
+    }
+    return $basePath . $path;
 }
 
 /**

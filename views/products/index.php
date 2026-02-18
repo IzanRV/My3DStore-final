@@ -172,27 +172,46 @@ $currentSearch = $_GET['search'] ?? '';
         <?php else: ?>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 <?php 
-                $productIndex = 0;
                 foreach ($products as $product): 
-                    $productImage = !empty($product['image_url']) 
-                        ? htmlspecialchars($product['image_url']) 
-                        : 'https://via.placeholder.com/400x400?text=3D+Product';
+                    if (!empty($product['image_url'])) {
+                        $iu = trim($product['image_url']);
+                        if (strpos($iu, 'http') === 0) {
+                            $productImage = htmlspecialchars($iu);
+                        } else {
+                            $rel = $iu;
+                            if (strpos($rel, '/') === 0) $rel = ltrim($rel, '/');
+                            if (preg_match('#^My3DStore/public/(.*)#', $rel, $m)) $rel = $m[1];
+                            $productImage = htmlspecialchars(asset($rel));
+                        }
+                    } else {
+                        $productImage = 'https://via.placeholder.com/400x400?text=3D+Product';
+                    }
                     $productPrice = formatPrice($product['price']);
-                    $showViewer = ($productIndex < 6); // Solo los primeros 6 para no superar límite WebGL
-                    $productIndex++;
+                    $hasModel = !empty($product['stl_url']) || (!empty($product['dimensions']) && (strpos($product['dimensions'], '.stl') !== false || strpos($product['dimensions'], '.glb') !== false));
+                    $modelPath = $hasModel ? productModelAsset($product) : '';
+                    $fallbackPath = asset('glb/pato.glb');
                 ?>
-                    <div class="bg-card-light dark:bg-card-dark rounded-xl overflow-hidden shadow-md group transition-all hover:shadow-xl hover:-translate-y-1">
+                    <div class="bg-card-light dark:bg-card-dark rounded-xl overflow-hidden shadow-md group transition-all hover:shadow-xl hover:-translate-y-1 product-card" data-product-url="<?php echo htmlspecialchars(url('product', ['id' => $product['id']])); ?>">
                         <div class="relative overflow-hidden aspect-square bg-[#003d7e]">
-                            <a href="/My3DStore/?action=product&id=<?php echo $product['id']; ?>" class="block w-full h-full">
-                                <?php if ($showViewer): ?>
-                                <div class="static-3d-viewer w-full h-full min-h-[200px]" data-model-path="<?php echo htmlspecialchars(productModelAsset($product)); ?>" data-fallback-model-path="<?php echo htmlspecialchars(asset('glb/pato.glb')); ?>" data-auto-rotate="true" data-rotation-speed="0.5"></div>
-                                <?php else: ?>
-                                <div class="w-full h-full flex items-center justify-center text-white/90">
-                                    <span class="material-icons-outlined text-5xl">view_in_ar</span>
+                            <a href="<?php echo htmlspecialchars(url('product', ['id' => $product['id']])); ?>" class="card-image-link block w-full h-full absolute inset-0 z-0">
+                                <div class="card-image relative w-full h-full <?php echo $hasModel ? '' : 'flex items-center justify-center'; ?>" style="<?php echo $hasModel ? '' : 'min-height:200px'; ?>">
+                                    <?php if ($productImage): ?>
+                                    <img src="<?php echo $productImage; ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" class="w-full h-full object-cover" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling && (this.nextElementSibling.style.display='flex');">
+                                    <span class="material-icons-outlined text-white/90 text-5xl absolute inset-0 flex items-center justify-center bg-[#003d7e]" style="display:none">view_in_ar</span>
+                                    <?php else: ?>
+                                    <span class="material-icons-outlined text-white/90 text-5xl">view_in_ar</span>
+                                    <?php endif; ?>
                                 </div>
-                                <?php endif; ?>
                             </a>
-                            <div class="absolute bottom-4 left-0 right-0 flex justify-center space-x-2 px-2">
+                            <div class="card-3d absolute inset-0 w-full h-full min-h-0 hidden z-10 pointer-events-auto bg-[#e2e8f0] dark:bg-slate-800 overflow-hidden">
+                                <?php if ($hasModel): ?>
+                                <div class="static-3d-viewer w-full h-full overflow-hidden" style="width:100%;height:100%;min-height:0;" data-model-path="<?php echo htmlspecialchars($modelPath); ?>" data-fallback-model-path="<?php echo htmlspecialchars($fallbackPath); ?>" data-auto-rotate="true" data-rotation-speed="0.5"></div>
+                                <?php endif; ?>
+                            </div>
+                            <?php if ($hasModel): ?>
+                            <button type="button" class="card-toggle-3d absolute top-2 right-2 z-20 px-2 py-1 rounded-lg bg-white/90 dark:bg-slate-800/90 text-xs font-medium shadow hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200" title="Ver modelo 3D">Ver en 3D</button>
+                            <?php endif; ?>
+                            <div class="absolute bottom-4 left-0 right-0 flex justify-center space-x-2 px-2 z-10">
                                 <?php if ($product['stock'] > 0 && isLoggedIn()): ?>
                                     <form method="POST" action="/My3DStore/?action=cart-add" class="flex-1">
                                         <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
@@ -234,7 +253,7 @@ $currentSearch = $_GET['search'] ?? '';
                             </div>
                         </div>
                         <div class="p-4 text-center">
-                            <a href="/My3DStore/?action=product&id=<?php echo $product['id']; ?>">
+                            <a href="<?php echo htmlspecialchars(url('product', ['id' => $product['id']])); ?>">
                                 <h4 class="font-bold text-slate-800 dark:text-slate-100"><?php echo htmlspecialchars($product['name']); ?></h4>
                                 <p class="text-primary font-bold mt-1"><?php echo $productPrice; ?></p>
                             </a>
@@ -248,22 +267,104 @@ $currentSearch = $_GET['search'] ?? '';
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    initStatic3DViewers(); // Máximo 6 visores (ver static-3d-viewer.js) para no superar límite WebGL
-    
-    // Función para manejar checkboxes de materiales (solo uno seleccionado a la vez)
-    function updateMaterialFilter(checkbox) {
-        const checkboxes = document.querySelectorAll('input[name="material"]');
-        if (checkbox.checked) {
-            // Desmarcar los demás
-            checkboxes.forEach(cb => {
-                if (cb !== checkbox) {
-                    cb.checked = false;
+    // Evitar que click/drag en el canvas 3D navegue al producto (una vez por tarjeta)
+    document.querySelectorAll('.card-3d').forEach(function(el) {
+        el.addEventListener('click', function(ev) { ev.stopPropagation(); });
+        el.addEventListener('mousedown', function(ev) { ev.stopPropagation(); });
+        el.addEventListener('touchstart', function(ev) { ev.stopPropagation(); }, { passive: true });
+    });
+
+    // Cerrar el visor 3D de una tarjeta y volver a mostrar la imagen
+    function closeCard3D(card) {
+        if (!card) return;
+        var card3d = card.querySelector('.card-3d');
+        var imageLink = card.querySelector('.card-image-link');
+        var imageWrap = card.querySelector('.card-image');
+        var btn = card.querySelector('.card-toggle-3d');
+        if (card._viewerInstance && typeof disposeStatic3DViewer === 'function') {
+            disposeStatic3DViewer(card._viewerInstance);
+            card._viewerInstance = null;
+        }
+        if (card3d) card3d.classList.add('hidden');
+        if (imageLink) imageLink.style.pointerEvents = '';
+        if (imageWrap) imageWrap.style.visibility = '';
+        if (btn) btn.textContent = 'Ver en 3D';
+    }
+
+    // Click en tarjeta: ir al producto (excepto botón, formulario o enlace)
+    document.querySelectorAll('.product-card').forEach(function(card) {
+        card.addEventListener('click', function(e) {
+            var productUrl = card.dataset.productUrl;
+            if (!productUrl) return;
+            if (e.target.closest('button') || e.target.closest('form') || e.target.closest('a')) return;
+            e.preventDefault();
+            window.location.href = productUrl;
+        });
+    });
+
+    document.querySelectorAll('.card-toggle-3d').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var card = this.closest('.product-card');
+            var imageLink = card.querySelector('.card-image-link');
+            var imageWrap = card.querySelector('.card-image');
+            var card3d = card.querySelector('.card-3d');
+
+            if (card3d.classList.contains('hidden')) {
+                // Abrir 3D en esta tarjeta: primero cerrar cualquier otra que tenga 3D abierto
+                document.querySelectorAll('.product-card').forEach(function(other) {
+                    if (other !== card && other.querySelector('.card-3d') && !other.querySelector('.card-3d').classList.contains('hidden')) {
+                        closeCard3D(other);
+                    }
+                });
+
+                card3d.classList.remove('hidden');
+                if (imageLink) imageLink.style.pointerEvents = 'none';
+                if (imageWrap) imageWrap.style.visibility = 'hidden';
+                this.textContent = 'Ver imagen';
+
+                function waitForSize(el, cb, tries) {
+                    if (tries === undefined) tries = 60;
+                    if (!el) return cb();
+                    var r = el.getBoundingClientRect();
+                    if (r.width > 10 && r.height > 10) return cb();
+                    if (tries <= 0) return cb();
+                    requestAnimationFrame(function() { waitForSize(el, cb, tries - 1); });
                 }
+
+                var viewerDiv = card3d.querySelector('.static-3d-viewer');
+                if (viewerDiv && !card._viewerInstance) {
+                    viewerDiv.style.position = 'absolute';
+                    viewerDiv.style.inset = '0';
+                    viewerDiv.style.width = '100%';
+                    viewerDiv.style.height = '100%';
+
+                    waitForSize(viewerDiv, function() {
+                        if (!card._viewerInstance && viewerDiv.parentNode) {
+                            var viewer = typeof initOneStatic3DViewer === 'function' ? initOneStatic3DViewer(viewerDiv) : null;
+                            if (viewer) {
+                                card._viewerInstance = viewer;
+                                setTimeout(function() { if (viewer.onWindowResize) viewer.onWindowResize(); }, 0);
+                                setTimeout(function() { if (viewer.onWindowResize) viewer.onWindowResize(); }, 150);
+                            }
+                        }
+                    });
+                }
+            } else {
+                closeCard3D(card);
+            }
+        });
+    });
+
+    function updateMaterialFilter(checkbox) {
+        var checkboxes = document.querySelectorAll('input[name="material"]');
+        if (checkbox.checked) {
+            checkboxes.forEach(function(cb) {
+                if (cb !== checkbox) cb.checked = false;
             });
-            // Enviar formulario
             document.getElementById('filterForm').submit();
         } else {
-            // Si se desmarca, quitar el filtro
             checkbox.checked = false;
             document.getElementById('filterForm').submit();
         }

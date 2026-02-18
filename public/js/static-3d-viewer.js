@@ -33,11 +33,20 @@ class Static3DViewer {
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(this.options.backgroundColor);
 
-        // Tamaño del contenedor (evitar 0 para no romper aspect ratio de la cámara)
-        const w = this.container.clientWidth;
-        const h = this.container.clientHeight || 400;
-        const width = Math.max(w, 1);
-        const height = Math.max(h, 1);
+        // Tamaño del contenedor: clientWidth/Height pueden ser 0 si estaba oculto; usar getBoundingClientRect
+        let w = this.container.clientWidth;
+        let h = this.container.clientHeight;
+        if (w <= 0 || h <= 0) {
+            const rect = this.container.getBoundingClientRect();
+            w = rect.width;
+            h = rect.height;
+        }
+        if (w <= 0 || h <= 0) {
+            w = w <= 0 ? 200 : w;
+            h = h <= 0 ? 200 : h;
+        }
+        const width = Math.max(Math.floor(w), 1);
+        const height = Math.max(Math.floor(h), 1);
 
         this.camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
         this.camera.position.set(0, 0, 100);
@@ -50,8 +59,14 @@ class Static3DViewer {
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 1.0;
         this.renderer.domElement.style.display = 'block';
+        this.renderer.domElement.style.position = 'absolute';
+        this.renderer.domElement.style.left = '0';
+        this.renderer.domElement.style.top = '0';
         this.renderer.domElement.style.width = '100%';
         this.renderer.domElement.style.height = '100%';
+        this.renderer.domElement.style.pointerEvents = 'auto';
+        this.container.style.position = 'relative';
+        this.container.style.overflow = 'hidden';
         this.container.appendChild(this.renderer.domElement);
 
         // Iluminación
@@ -270,10 +285,15 @@ class Static3DViewer {
 
     onWindowResize() {
         if (!this.container || !this.camera || !this.renderer) return;
-        const w = this.container.clientWidth;
-        const h = this.container.clientHeight;
-        const width = Math.max(w, 1);
-        const height = Math.max(h, 1);
+        let w = this.container.clientWidth;
+        let h = this.container.clientHeight;
+        if (w <= 0 || h <= 0) {
+            const rect = this.container.getBoundingClientRect();
+            w = rect.width;
+            h = rect.height;
+        }
+        const width = Math.max(Math.floor(w), 1);
+        const height = Math.max(Math.floor(h), 1);
         this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(width, height);
@@ -328,4 +348,22 @@ function initStatic3DViewers() {
     });
     
     return viewerInstances;
+}
+
+function initOneStatic3DViewer(container) {
+    if (!container) return null;
+    try {
+        return new Static3DViewer(container, {
+            modelPath: container.dataset.modelPath || '/public/glb/pato.glb',
+            autoRotate: container.dataset.autoRotate !== 'false',
+            rotationSpeed: parseFloat(container.dataset.rotationSpeed) || 0.5
+        });
+    } catch (e) {
+        console.error('initOneStatic3DViewer', e);
+        return null;
+    }
+}
+
+function disposeStatic3DViewer(instance) {
+    if (instance && typeof instance.destroy === 'function') instance.destroy();
 }
