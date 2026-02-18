@@ -24,6 +24,7 @@ class Static3DViewer {
         this.renderer = null;
         this.model = null;
         this.animationId = null;
+        this._loadId = 0;
 
         this.init();
     }
@@ -100,13 +101,19 @@ class Static3DViewer {
     }
 
     loadModel() {
-        let path = (this.options.modelPath || '').replace(/\?.*$/, '').replace(/#.*$/, '').trim();
+        const rawPath = (this.options.modelPath || '').trim();
+        const path = rawPath.replace(/\?.*$/, '').replace(/#.*$/, '').trim();
         const fallbackPath = (this.container && this.container.dataset.fallbackModelPath) || this.options.fallbackModelPath || '';
 
-        // URL absoluta para que fetch funcione desde cualquier página
-        const absoluteUrl = path && !path.startsWith('http') 
-            ? (window.location.origin + (path.startsWith('/') ? path : '/' + path))
-            : path;
+        this._loadId = (this._loadId || 0) + 1;
+        const currentLoadId = this._loadId;
+
+        const isCurrentLoad = () => currentLoadId === this._loadId;
+
+        // URL absoluta para fetch (conservar query string por si lleva cache buster)
+        const absoluteUrl = rawPath && !rawPath.startsWith('http')
+            ? (window.location.origin + (rawPath.startsWith('/') ? rawPath : '/' + rawPath))
+            : rawPath;
 
         const tryFallback = () => {
             if (fallbackPath && fallbackPath !== path && !this._fallbackTried) {
@@ -143,6 +150,7 @@ class Static3DViewer {
                 loader.load(blobUrl,
                     (geometry) => {
                         revoke();
+                        if (!isCurrentLoad()) return;
                         const material = new THREE.MeshPhongMaterial({
                             color: 0x0056b3,
                             specular: 0x222222,
@@ -161,6 +169,7 @@ class Static3DViewer {
                 loader.load(blobUrl,
                     (gltf) => {
                         revoke();
+                        if (!isCurrentLoad()) return;
                         this.model = gltf.scene;
                         if (this.options.initialRotation) {
                             const rot = this.options.initialRotation;
@@ -185,6 +194,7 @@ class Static3DViewer {
                 const loader = new THREE.STLLoader();
                 loader.load(urlToLoad,
                     (geometry) => {
+                        if (!isCurrentLoad()) return;
                         const material = new THREE.MeshPhongMaterial({
                             color: 0x0056b3,
                             specular: 0x222222,
@@ -202,6 +212,7 @@ class Static3DViewer {
                 const loader = new THREE.GLTFLoader();
                 loader.load(urlToLoad,
                     (gltf) => {
+                        if (!isCurrentLoad()) return;
                         this.model = gltf.scene;
                         if (this.options.initialRotation) {
                             const rot = this.options.initialRotation;
@@ -219,7 +230,7 @@ class Static3DViewer {
             }
         };
 
-        fetch(absoluteUrl, { method: 'GET', credentials: 'same-origin' })
+        fetch(absoluteUrl, { method: 'GET', credentials: 'same-origin', cache: 'no-store' })
             .then((res) => {
                 if (!res.ok) {
                     tryFallback();
@@ -239,6 +250,38 @@ class Static3DViewer {
                 // Si fetch falla (red, CORS, ruta), intentar carga directa con el loader; si falla, onLoadError hará tryFallback
                 loadDirect();
             });
+    }
+
+    /**
+     * Quita el modelo actual de la escena y carga otro por URL (para carrusel de modelos).
+     * @param {string} modelUrl URL absoluta o relativa del .stl o .glb
+     */
+    loadModelFromUrl(modelUrl) {
+        if (!modelUrl || !this.scene) return;
+        if (this.model) {
+            this.scene.remove(this.model);
+            this.model.traverse((child) => {
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(mat => {
+                            if (mat.map) mat.map.dispose();
+                            mat.dispose();
+                        });
+                    } else {
+                        if (child.material && child.material.map) child.material.map.dispose();
+                        if (child.material) child.material.dispose();
+                    }
+                }
+            });
+            this.model = null;
+        }
+        this._fallbackTried = false;
+        modelUrl = (modelUrl || '').replace(/^\s+|\s+$/g, '');
+        // Cache buster para que cada modelo se pida de nuevo y no se use la caché del anterior
+        modelUrl = modelUrl + (modelUrl.indexOf('?') >= 0 ? '&' : '?') + '_=' + Date.now();
+        this.options.modelPath = modelUrl;
+        this.loadModel();
     }
 
     _centerAndScaleModel() {

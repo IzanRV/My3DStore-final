@@ -145,12 +145,10 @@ $pageTitle = $pageTitle ?? 'My3DStore';
 <button id="menuToggle" class="p-2.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md" aria-label="Abrir menú">
 <span class="material-icons-outlined text-primary">menu</span>
 </button>
-<div class="flex items-center gap-2">
-<div class="w-10 h-10 bg-primary flex items-center justify-center rounded-lg shadow-lg">
-<span class="material-icons-outlined text-white">3d_rotation</span>
-</div>
-<a href="/My3DStore/" class="text-xl font-bold tracking-tight hidden sm:block">My3D<span class="text-primary">Store</span></a>
-</div>
+<a href="<?php echo url(''); ?>" class="flex items-center gap-2 flex-shrink-0">
+<img src="<?php echo htmlspecialchars(asset('images/logo-icon.png')); ?>" alt="" class="h-10 w-10 object-contain" aria-hidden="true" />
+<span class="text-xl font-bold tracking-tight hidden sm:inline">My3D<span class="text-primary">Store</span></span>
+</a>
 </div>
 <div class="flex-1 max-w-xl hidden md:block">
 <div class="relative group">
@@ -259,15 +257,13 @@ $pageTitle = $pageTitle ?? 'My3DStore';
 
         <!-- Menu Footer -->
         <div class="p-6 border-t border-white/20">
-            <div class="flex items-center gap-3 mb-2">
-                <div class="w-10 h-10 bg-primary flex items-center justify-center rounded-lg">
-                    <span class="material-icons-outlined text-white">3d_rotation</span>
-                </div>
+            <a href="<?php echo url(''); ?>" class="flex items-center gap-3 mb-2">
+                <img src="<?php echo htmlspecialchars(asset('images/logo-icon.png')); ?>" alt="" class="h-10 w-10 object-contain" aria-hidden="true" />
                 <div>
                     <div class="text-white font-bold">My3D <span class="text-orange-400">Store</span></div>
                     <div class="text-white/70 text-sm">Impresión 3D</div>
                 </div>
-            </div>
+            </a>
         </div>
     </div>
 </nav>

@@ -151,29 +151,138 @@ function asset($path) {
  * @return string URL del asset del modelo.
  */
 function productModelAsset($product) {
+    $urls = productModelAssets($product);
+    return $urls ? $urls[0] : asset('glb/pato.glb');
+}
+
+/**
+ * Lista nombres de archivos .stl y .glb en un directorio (ordenados).
+ * @param string $dirPath Ruta absoluta del directorio.
+ * @return array Lista de nombres de archivo.
+ */
+function listStlGlbInDir($dirPath) {
+    $files = [];
+    if (!is_dir($dirPath)) return $files;
+    foreach (new DirectoryIterator($dirPath) as $f) {
+        if ($f->isDot()) continue;
+        $name = $f->getFilename();
+        if (preg_match('/\.(stl|glb)$/i', $name)) {
+            $files[] = $name;
+        }
+    }
+    sort($files);
+    return $files;
+}
+
+/**
+ * Lista de URLs de modelos 3D para un producto.
+ * Si existe la carpeta public/stl/{id}/ (por id de producto o por número en stl_url, ej. 1471971), devuelve todos los .stl/.glb.
+ * Si no, devuelve un único elemento con el modelo actual (stl_url o dimensions).
+ * @param array|null $product Debe contener 'id' y opcionalmente 'stl_url', 'dimensions'.
+ * @return array Lista de URLs de assets.
+ */
+function productModelAssets($product) {
     if (!is_array($product)) {
-        return asset('glb/pato.glb');
+        return [asset('glb/pato.glb')];
     }
-    $stlUrl = isset($product['stl_url']) ? trim($product['stl_url']) : '';
-    if ($stlUrl !== '' && (strpos($stlUrl, '.stl') !== false || strpos($stlUrl, '.glb') !== false)) {
-        return asset($stlUrl);
-    }
-    $d = isset($product['dimensions']) ? trim($product['dimensions']) : '';
-    if ($d !== '' && (strpos($d, '.stl') !== false || strpos($d, '.glb') !== false)) {
-        $ext = (strpos($d, '.stl') !== false) ? 'stl' : 'glb';
-        $baseDir = __DIR__ . '/../public/' . $ext . '/';
-        $subPath = $ext . '/' . $d;
-        if ($ext === 'stl') {
-            if (file_exists($baseDir . $d)) {
-                return asset($subPath);
+    $id = isset($product['id']) ? (int) $product['id'] : 0;
+    $stlDir = __DIR__ . '/../public/stl/';
+
+    // 1) Carpeta por id de producto: public/stl/{id}/
+    $folderPath = $stlDir . $id;
+    if ($id > 0 && is_dir($folderPath)) {
+        $files = listStlGlbInDir($folderPath);
+        if (!empty($files)) {
+            $out = [];
+            foreach ($files as $name) {
+                $out[] = asset('stl/' . $id . '/' . $name);
             }
-            if (file_exists($baseDir . 'generated/' . $d)) {
-                return asset($ext . '/generated/' . $d);
+            return $out;
+        }
+    }
+
+    // 2) Carpeta por número en stl_url/dimensions (ej. printables_1471971_... -> carpeta stl/1471971/)
+    $stlUrl = isset($product['stl_url']) ? trim($product['stl_url']) : '';
+    $d = isset($product['dimensions']) ? trim($product['dimensions']) : '';
+    $haystack = $stlUrl . ' ' . $d;
+    if (preg_match_all('/(\d{4,})/', $haystack, $m)) {
+        foreach (array_unique($m[1]) as $folderId) {
+            $folderPath = $stlDir . $folderId;
+            if (is_dir($folderPath)) {
+                $files = listStlGlbInDir($folderPath);
+                if (!empty($files)) {
+                    $out = [];
+                    foreach ($files as $name) {
+                        $out[] = asset('stl/' . $folderId . '/' . $name);
+                    }
+                    return $out;
+                }
             }
         }
-        return asset($subPath);
     }
-    return asset('glb/pato.glb');
+
+    $single = null;
+    $stlUrl = isset($product['stl_url']) ? trim($product['stl_url']) : '';
+    if ($stlUrl !== '' && (strpos($stlUrl, '.stl') !== false || strpos($stlUrl, '.glb') !== false)) {
+        $single = asset($stlUrl);
+    } else {
+        $d = isset($product['dimensions']) ? trim($product['dimensions']) : '';
+        if ($d !== '' && (strpos($d, '.stl') !== false || strpos($d, '.glb') !== false)) {
+            $ext = (strpos($d, '.stl') !== false) ? 'stl' : 'glb';
+            $baseDir = __DIR__ . '/../public/' . $ext . '/';
+            $subPath = $ext . '/' . $d;
+            if ($ext === 'stl') {
+                if (file_exists($baseDir . $d)) $single = asset($subPath);
+                elseif (file_exists($baseDir . 'generated/' . $d)) $single = asset($ext . '/generated/' . $d);
+                else $single = asset($subPath);
+            } else {
+                $single = asset($subPath);
+            }
+        }
+    }
+    return $single ? [$single] : [asset('glb/pato.glb')];
+}
+
+/**
+ * Lista de URLs de imágenes para un producto.
+ * Si existe la carpeta public/images/products/{id}/, devuelve todas las imágenes (ordenadas).
+ * Si no, devuelve un único elemento con image_url si existe.
+ * @param array|null $product Debe contener 'id' y opcionalmente 'image_url'.
+ * @return array Lista de URLs de imágenes.
+ */
+function productImageAssets($product) {
+    if (!is_array($product)) {
+        return [];
+    }
+    $id = isset($product['id']) ? (int) $product['id'] : 0;
+    $imgDir = __DIR__ . '/../public/images/products/';
+    $folderPath = $imgDir . $id;
+    if ($id > 0 && is_dir($folderPath)) {
+        $files = [];
+        foreach (new DirectoryIterator($folderPath) as $f) {
+            if ($f->isDot()) continue;
+            $name = $f->getFilename();
+            if (preg_match('/\.(jpe?g|png|gif|webp)$/i', $name)) {
+                $files[] = $name;
+            }
+        }
+        sort($files);
+        $out = [];
+        foreach ($files as $name) {
+            $out[] = asset('images/products/' . $id . '/' . $name);
+        }
+        if (!empty($out)) return $out;
+    }
+    $iu = isset($product['image_url']) ? trim($product['image_url']) : '';
+    if ($iu === '') return [];
+    if (strpos($iu, 'http') === 0) {
+        return [htmlspecialchars($iu)];
+    }
+    $rel = $iu;
+    if (strpos($rel, '/') === 0) $rel = ltrim($rel, '/');
+    if (preg_match('#^My3DStore/public/(.*)#', $rel, $m)) $rel = $m[1];
+    if (preg_match('#^public/(images/.*)#', $rel, $m)) $rel = $m[1];
+    return [asset($rel)];
 }
 
 function url($path = '', $params = []) {

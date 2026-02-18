@@ -2,12 +2,45 @@
 $pageTitle = $product['name'];
 $loadStatic3D = true; // Cargar modelos 3D estáticos
 include __DIR__ . '/../../includes/header.php';
+
+$productImages = productImageAssets($product);
+$productModels = productModelAssets($product);
+$productMedia = [];
+foreach ($productImages as $url) {
+    $productMedia[] = ['type' => 'image', 'url' => $url];
+}
+foreach ($productModels as $url) {
+    $productMedia[] = ['type' => 'model', 'url' => $url];
+}
+if (empty($productMedia)) {
+    $productMedia[] = ['type' => 'model', 'url' => asset('glb/pato.glb')];
+}
+$productMediaJson = json_encode($productMedia);
+$fallbackModelUrl = htmlspecialchars(asset('glb/pato.glb'));
 ?>
 
 <div class="product-detail">
     <div class="product-detail-container">
-        <div class="product-images">
-            <div id="product-detail-3d" class="static-3d-viewer" style="width: 100%; height: 500px;" data-model-path="<?php echo htmlspecialchars(productModelAsset($product)); ?>" data-fallback-model-path="<?php echo htmlspecialchars(asset('glb/pato.glb')); ?>"></div>
+        <div class="product-images product-detail-carousel">
+            <div class="product-carousel-wrap" style="position:relative; width:100%; height:500px; background:#e2e8f0; border-radius:0.75rem; overflow:hidden;" data-media-count="<?php echo count($productMedia); ?>" data-models-count="<?php echo count($productModels); ?>">
+                <?php if (count($productMedia) > 1): ?>
+                <button type="button" class="product-carousel-prev absolute left-2 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/90 dark:bg-slate-800/90 shadow-lg flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-colors" aria-label="Anterior">
+                    <span class="material-icons-outlined">chevron_left</span>
+                </button>
+                <button type="button" class="product-carousel-next absolute right-2 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/90 dark:bg-slate-800/90 shadow-lg flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-colors" aria-label="Siguiente">
+                    <span class="material-icons-outlined">chevron_right</span>
+                </button>
+                <?php endif; ?>
+                <div class="product-carousel-slide product-carousel-slide-image absolute inset-0 flex items-center justify-center bg-[#e2e8f0] dark:bg-slate-800" style="z-index:5; display:none;">
+                    <img src="" alt="<?php echo htmlspecialchars($product['name']); ?>" class="max-w-full max-h-full w-full h-full object-contain">
+                </div>
+                <div class="product-carousel-slide product-carousel-slide-model absolute inset-0" style="z-index:5;">
+                    <div id="product-detail-3d" class="static-3d-viewer w-full h-full" style="width: 100%; height: 500px;" data-model-path="<?php echo htmlspecialchars(($productModels[0] ?? asset('glb/pato.glb'))); ?>" data-fallback-model-path="<?php echo $fallbackModelUrl; ?>"></div>
+                </div>
+                <?php if (count($productMedia) > 1): ?>
+                <div class="product-carousel-index text-center py-2 absolute bottom-2 left-0 right-0 z-20 text-sm text-slate-600 dark:text-slate-400">1 / <?php echo count($productMedia); ?></div>
+                <?php endif; ?>
+            </div>
         </div>
         
         <div class="product-details">
@@ -135,7 +168,71 @@ include __DIR__ . '/../../includes/header.php';
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    initStatic3DViewers();
+    var media = <?php echo $productMediaJson; ?>;
+    var total = media.length;
+    var currentIndex = 0;
+    var wrap = document.querySelector('.product-carousel-wrap');
+    if (!wrap) return;
+    var slideImage = wrap.querySelector('.product-carousel-slide-image');
+    var slideModel = wrap.querySelector('.product-carousel-slide-model');
+    var imgEl = wrap.querySelector('.product-carousel-slide-image img');
+    var viewerContainer = document.getElementById('product-detail-3d');
+    var indexEl = wrap.querySelector('.product-carousel-index');
+    var btnPrev = wrap.querySelector('.product-carousel-prev');
+    var btnNext = wrap.querySelector('.product-carousel-next');
+
+    function toAbsoluteUrl(url) {
+        if (!url) return url;
+        if (url.indexOf('http') === 0) return url;
+        var origin = window.location.origin;
+        var path = (url.charAt(0) === '/' ? url : '/' + url);
+        return origin + path;
+    }
+
+    function showSlide(index) {
+        if (total === 0) return;
+        currentIndex = (index + total) % total;
+        var item = media[currentIndex];
+        if (!item) return;
+        if (item.type === 'image') {
+            slideImage.style.display = 'flex';
+            slideModel.style.display = 'none';
+            if (imgEl) imgEl.src = toAbsoluteUrl(item.url);
+        } else {
+            slideImage.style.display = 'none';
+            slideModel.style.display = 'block';
+            if (window.productDetailViewer && typeof window.productDetailViewer.loadModelFromUrl === 'function' && item.url) {
+                var modelUrl = toAbsoluteUrl(item.url);
+                window.productDetailViewer.loadModelFromUrl(modelUrl);
+            }
+        }
+        if (indexEl) indexEl.textContent = (currentIndex + 1) + ' / ' + total;
+    }
+
+    if (total <= 1) {
+        if (btnPrev) btnPrev.style.display = 'none';
+        if (btnNext) btnNext.style.display = 'none';
+    }
+
+    var firstItem = media[0];
+    if (firstItem.type === 'image') {
+        slideModel.style.display = 'none';
+        slideImage.style.display = 'flex';
+        if (imgEl) imgEl.src = toAbsoluteUrl(firstItem.url);
+    } else {
+        slideImage.style.display = 'none';
+        slideModel.style.display = 'block';
+    }
+    if (viewerContainer) {
+        window.productDetailViewer = new Static3DViewer(viewerContainer, {
+            modelPath: firstItem.type === 'model' ? firstItem.url : (media.find(function(m) { return m.type === 'model'; }) || {}).url || '<?php echo $fallbackModelUrl; ?>',
+            autoRotate: true,
+            rotationSpeed: 0.5
+        });
+    }
+
+    if (btnPrev) btnPrev.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); showSlide(currentIndex - 1); });
+    if (btnNext) btnNext.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); showSlide(currentIndex + 1); });
 });
 </script>
 <?php include __DIR__ . '/../../includes/footer.php'; ?>

@@ -173,43 +173,40 @@ $currentSearch = $_GET['search'] ?? '';
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 <?php 
                 foreach ($products as $product): 
-                    if (!empty($product['image_url'])) {
-                        $iu = trim($product['image_url']);
-                        if (strpos($iu, 'http') === 0) {
-                            $productImage = htmlspecialchars($iu);
-                        } else {
-                            $rel = $iu;
-                            if (strpos($rel, '/') === 0) $rel = ltrim($rel, '/');
-                            if (preg_match('#^My3DStore/public/(.*)#', $rel, $m)) $rel = $m[1];
-                            $productImage = htmlspecialchars(asset($rel));
-                        }
-                    } else {
-                        $productImage = 'https://via.placeholder.com/400x400?text=3D+Product';
+                    $cardImages = productImageAssets($product);
+                    $cardModels = productModelAssets($product);
+                    $cardMedia = [];
+                    foreach ($cardImages as $u) { $cardMedia[] = ['type' => 'image', 'url' => $u]; }
+                    foreach ($cardModels as $u) { $cardMedia[] = ['type' => 'model', 'url' => $u]; }
+                    if (empty($cardMedia)) {
+                        $cardMedia[] = ['type' => 'image', 'url' => 'https://via.placeholder.com/400x400?text=3D+Product'];
                     }
+                    $productImage = $cardMedia[0]['type'] === 'image' ? $cardMedia[0]['url'] : (count($cardImages) ? $cardImages[0] : 'https://via.placeholder.com/400x400?text=3D+Product');
                     $productPrice = formatPrice($product['price']);
-                    $hasModel = !empty($product['stl_url']) || (!empty($product['dimensions']) && (strpos($product['dimensions'], '.stl') !== false || strpos($product['dimensions'], '.glb') !== false));
-                    $modelPath = $hasModel ? productModelAsset($product) : '';
+                    $hasModel = count($cardModels) > 0;
+                    $modelPath = $hasModel ? $cardModels[0] : '';
                     $fallbackPath = asset('glb/pato.glb');
+                    $cardMediaJson = htmlspecialchars(json_encode($cardMedia), ENT_QUOTES, 'UTF-8');
                 ?>
-                    <div class="bg-card-light dark:bg-card-dark rounded-xl overflow-hidden shadow-md group transition-all hover:shadow-xl hover:-translate-y-1 product-card" data-product-url="<?php echo htmlspecialchars(url('product', ['id' => $product['id']])); ?>">
-                        <div class="relative overflow-hidden aspect-square bg-[#003d7e]">
+                    <div class="bg-card-light dark:bg-card-dark rounded-xl overflow-hidden shadow-md group transition-all hover:shadow-xl hover:-translate-y-1 product-card" data-product-url="<?php echo htmlspecialchars(url('product', ['id' => $product['id']])); ?>" data-product-media="<?php echo $cardMediaJson; ?>">
+                        <div class="relative overflow-hidden aspect-square bg-[#003d7e] card-carousel-wrap">
                             <a href="<?php echo htmlspecialchars(url('product', ['id' => $product['id']])); ?>" class="card-image-link block w-full h-full absolute inset-0 z-0">
-                                <div class="card-image relative w-full h-full <?php echo $hasModel ? '' : 'flex items-center justify-center'; ?>" style="<?php echo $hasModel ? '' : 'min-height:200px'; ?>">
-                                    <?php if ($productImage): ?>
-                                    <img src="<?php echo $productImage; ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" class="w-full h-full object-cover" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling && (this.nextElementSibling.style.display='flex');">
+                                <div class="card-image relative w-full h-full flex items-center justify-center" style="min-height:200px;">
+                                    <img src="<?php echo htmlspecialchars($productImage); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" class="card-carousel-img w-full h-full object-cover" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling && (this.nextElementSibling.style.display='flex');">
                                     <span class="material-icons-outlined text-white/90 text-5xl absolute inset-0 flex items-center justify-center bg-[#003d7e]" style="display:none">view_in_ar</span>
-                                    <?php else: ?>
-                                    <span class="material-icons-outlined text-white/90 text-5xl">view_in_ar</span>
-                                    <?php endif; ?>
                                 </div>
                             </a>
                             <div class="card-3d absolute inset-0 w-full h-full min-h-0 hidden z-10 pointer-events-auto bg-[#e2e8f0] dark:bg-slate-800 overflow-hidden">
-                                <?php if ($hasModel): ?>
-                                <div class="static-3d-viewer w-full h-full overflow-hidden" style="width:100%;height:100%;min-height:0;" data-model-path="<?php echo htmlspecialchars($modelPath); ?>" data-fallback-model-path="<?php echo htmlspecialchars($fallbackPath); ?>" data-auto-rotate="true" data-rotation-speed="0.5"></div>
-                                <?php endif; ?>
+                                <div class="card-static-3d-viewer w-full h-full overflow-hidden" style="width:100%;height:100%;min-height:0;" data-model-path="<?php echo htmlspecialchars($modelPath); ?>" data-fallback-model-path="<?php echo htmlspecialchars($fallbackPath); ?>" data-auto-rotate="true" data-rotation-speed="0.5"></div>
                             </div>
-                            <?php if ($hasModel): ?>
-                            <button type="button" class="card-toggle-3d absolute top-2 right-2 z-20 px-2 py-1 rounded-lg bg-white/90 dark:bg-slate-800/90 text-xs font-medium shadow hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200" title="Ver modelo 3D">Ver en 3D</button>
+                            <?php if (count($cardMedia) > 1): ?>
+                            <button type="button" class="card-carousel-prev absolute left-1 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/90 dark:bg-slate-800/90 shadow flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-colors" aria-label="Anterior">
+                                <span class="material-icons-outlined text-lg">chevron_left</span>
+                            </button>
+                            <button type="button" class="card-carousel-next absolute right-1 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/90 dark:bg-slate-800/90 shadow flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-colors" aria-label="Siguiente">
+                                <span class="material-icons-outlined text-lg">chevron_right</span>
+                            </button>
+                            <div class="card-carousel-dot absolute bottom-1 left-0 right-0 flex justify-center gap-1 z-20 text-[10px] text-white/90">1/<?php echo count($cardMedia); ?></div>
                             <?php endif; ?>
                             <div class="absolute bottom-4 left-0 right-0 flex justify-center space-x-2 px-2 z-10">
                                 <?php if ($product['stock'] > 0 && isLoggedIn()): ?>
@@ -267,32 +264,81 @@ $currentSearch = $_GET['search'] ?? '';
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Evitar que click/drag en el canvas 3D navegue al producto (una vez por tarjeta)
+    var MAX_VIEWERS = 6;
+    var activeViewerCards = [];
+
     document.querySelectorAll('.card-3d').forEach(function(el) {
         el.addEventListener('click', function(ev) { ev.stopPropagation(); });
         el.addEventListener('mousedown', function(ev) { ev.stopPropagation(); });
         el.addEventListener('touchstart', function(ev) { ev.stopPropagation(); }, { passive: true });
     });
 
-    // Cerrar el visor 3D de una tarjeta y volver a mostrar la imagen
-    function closeCard3D(card) {
-        if (!card) return;
-        var card3d = card.querySelector('.card-3d');
-        var imageLink = card.querySelector('.card-image-link');
-        var imageWrap = card.querySelector('.card-image');
-        var btn = card.querySelector('.card-toggle-3d');
-        if (card._viewerInstance && typeof disposeStatic3DViewer === 'function') {
-            disposeStatic3DViewer(card._viewerInstance);
-            card._viewerInstance = null;
-        }
-        if (card3d) card3d.classList.add('hidden');
-        if (imageLink) imageLink.style.pointerEvents = '';
-        if (imageWrap) imageWrap.style.visibility = '';
-        if (btn) btn.textContent = 'Ver en 3D';
+    function toAbsoluteUrl(url) {
+        if (!url || url.indexOf('http') === 0) return url;
+        var origin = window.location.origin;
+        return origin + (url.charAt(0) === '/' ? url : '/' + url);
     }
 
-    // Click en tarjeta: ir al producto (excepto botón, formulario o enlace)
+    function ensureViewerForCard(card, modelUrl, callback) {
+        var card3d = card.querySelector('.card-3d');
+        var viewerDiv = card3d ? card3d.querySelector('.card-static-3d-viewer') : null;
+        if (!viewerDiv) return callback(null);
+        if (card._viewerInstance) {
+            if (card._viewerInstance.loadModelFromUrl) card._viewerInstance.loadModelFromUrl(toAbsoluteUrl(modelUrl));
+            return callback(card._viewerInstance);
+        }
+        while (activeViewerCards.length >= MAX_VIEWERS && activeViewerCards.length > 0) {
+            var old = activeViewerCards.shift();
+            if (old._viewerInstance && typeof disposeStatic3DViewer === 'function') {
+                disposeStatic3DViewer(old._viewerInstance);
+                old._viewerInstance = null;
+            }
+        }
+        viewerDiv.dataset.modelPath = modelUrl;
+        var viewer = typeof initOneStatic3DViewer === 'function' ? initOneStatic3DViewer(viewerDiv) : null;
+        if (viewer) {
+            card._viewerInstance = viewer;
+            activeViewerCards.push(card);
+            setTimeout(function() { if (viewer.onWindowResize) viewer.onWindowResize(); }, 0);
+        }
+        callback(viewer);
+    }
+
+    function showCardSlide(card, index) {
+        var mediaJson = card.dataset.productMedia;
+        if (!mediaJson) return;
+        var media = [];
+        try { media = JSON.parse(mediaJson); } catch (e) { return; }
+        if (media.length === 0) return;
+        index = (index + media.length) % media.length;
+        card._carouselIndex = index;
+        var item = media[index];
+        var wrap = card.querySelector('.card-carousel-wrap');
+        var imageLink = card.querySelector('.card-image-link');
+        var imageWrap = card.querySelector('.card-image');
+        var imgEl = card.querySelector('.card-carousel-img');
+        var card3d = card.querySelector('.card-3d');
+        var dotEl = card.querySelector('.card-carousel-dot');
+
+        if (item.type === 'image') {
+            if (imageLink) imageLink.style.pointerEvents = '';
+            if (imageWrap) imageWrap.style.visibility = 'visible';
+            if (imgEl) imgEl.src = toAbsoluteUrl(item.url);
+            if (card3d) card3d.classList.add('hidden');
+        } else {
+            if (imageLink) imageLink.style.pointerEvents = 'none';
+            if (imageWrap) imageWrap.style.visibility = 'hidden';
+            if (card3d) card3d.classList.remove('hidden');
+            ensureViewerForCard(card, item.url, function() {
+                if (dotEl) dotEl.textContent = (index + 1) + '/' + media.length;
+            });
+        }
+        if (dotEl) dotEl.textContent = (index + 1) + '/' + media.length;
+    }
+
     document.querySelectorAll('.product-card').forEach(function(card) {
+        card._carouselIndex = 0;
+
         card.addEventListener('click', function(e) {
             var productUrl = card.dataset.productUrl;
             if (!productUrl) return;
@@ -300,61 +346,35 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             window.location.href = productUrl;
         });
-    });
 
-    document.querySelectorAll('.card-toggle-3d').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
+        var btnPrev = card.querySelector('.card-carousel-prev');
+        var btnNext = card.querySelector('.card-carousel-next');
+        if (btnPrev) btnPrev.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            var card = this.closest('.product-card');
-            var imageLink = card.querySelector('.card-image-link');
-            var imageWrap = card.querySelector('.card-image');
-            var card3d = card.querySelector('.card-3d');
-
-            if (card3d.classList.contains('hidden')) {
-                // Abrir 3D en esta tarjeta: primero cerrar cualquier otra que tenga 3D abierto
-                document.querySelectorAll('.product-card').forEach(function(other) {
-                    if (other !== card && other.querySelector('.card-3d') && !other.querySelector('.card-3d').classList.contains('hidden')) {
-                        closeCard3D(other);
-                    }
-                });
-
-                card3d.classList.remove('hidden');
-                if (imageLink) imageLink.style.pointerEvents = 'none';
-                if (imageWrap) imageWrap.style.visibility = 'hidden';
-                this.textContent = 'Ver imagen';
-
-                function waitForSize(el, cb, tries) {
-                    if (tries === undefined) tries = 60;
-                    if (!el) return cb();
-                    var r = el.getBoundingClientRect();
-                    if (r.width > 10 && r.height > 10) return cb();
-                    if (tries <= 0) return cb();
-                    requestAnimationFrame(function() { waitForSize(el, cb, tries - 1); });
-                }
-
-                var viewerDiv = card3d.querySelector('.static-3d-viewer');
-                if (viewerDiv && !card._viewerInstance) {
-                    viewerDiv.style.position = 'absolute';
-                    viewerDiv.style.inset = '0';
-                    viewerDiv.style.width = '100%';
-                    viewerDiv.style.height = '100%';
-
-                    waitForSize(viewerDiv, function() {
-                        if (!card._viewerInstance && viewerDiv.parentNode) {
-                            var viewer = typeof initOneStatic3DViewer === 'function' ? initOneStatic3DViewer(viewerDiv) : null;
-                            if (viewer) {
-                                card._viewerInstance = viewer;
-                                setTimeout(function() { if (viewer.onWindowResize) viewer.onWindowResize(); }, 0);
-                                setTimeout(function() { if (viewer.onWindowResize) viewer.onWindowResize(); }, 150);
-                            }
-                        }
-                    });
-                }
-            } else {
-                closeCard3D(card);
-            }
+            showCardSlide(card, (card._carouselIndex || 0) - 1);
         });
+        if (btnNext) btnNext.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            showCardSlide(card, (card._carouselIndex || 0) + 1);
+        });
+
+        var mediaJson = card.dataset.productMedia;
+        if (mediaJson) {
+            try {
+                var media = JSON.parse(mediaJson);
+                if (media.length > 0 && media[0].type === 'model') {
+                    card._carouselIndex = 0;
+                    var imageWrap = card.querySelector('.card-image');
+                    var card3d = card.querySelector('.card-3d');
+                    if (imageWrap) imageWrap.style.visibility = 'hidden';
+                    if (card.querySelector('.card-image-link')) card.querySelector('.card-image-link').style.pointerEvents = 'none';
+                    if (card3d) card3d.classList.remove('hidden');
+                    ensureViewerForCard(card, media[0].url, function() {});
+                }
+            } catch (e) {}
+        }
     });
 
     function updateMaterialFilter(checkbox) {
