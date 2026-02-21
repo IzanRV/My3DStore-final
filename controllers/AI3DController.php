@@ -14,9 +14,10 @@ class AI3DController {
     private $logoDir;
 
     public function __construct() {
-        // Configurar URL del microservicio (Docker: http://ai3d:8000)
-        $serviceUrl = getenv('AI_3D_SERVICE_URL') ?: 'http://localhost:8000';
-        $apiKey = getenv('AI_3D_SERVICE_API_KEY') ?: null;
+        // Configurar URL del microservicio (Docker: http://ai3d:8000). Fallback a $_ENV por si getenv() no ve las variables (p. ej. en algunos entornos Apache/Railway).
+        $rawUrl = getenv('AI_3D_SERVICE_URL') ?: ($_ENV['AI_3D_SERVICE_URL'] ?? '');
+        $serviceUrl = is_string($rawUrl) && trim($rawUrl) !== '' ? trim($rawUrl) : 'http://localhost:8000';
+        $apiKey = getenv('AI_3D_SERVICE_API_KEY') ?: ($_ENV['AI_3D_SERVICE_API_KEY'] ?? null);
 
         $this->aiService = new AI3DService($serviceUrl, $apiKey);
         $this->outputDir = __DIR__ . '/../public/generated_models';
@@ -95,7 +96,11 @@ class AI3DController {
             // Verificar que el servicio esté activo
             if (!$this->aiService->isHealthy()) {
                 http_response_code(503);
-                echo json_encode(['error' => 'El servicio de IA no está disponible']);
+                $body = ['error' => 'El servicio de IA no está disponible'];
+                if (!empty($_GET['debug']) || !empty($_POST['debug']) || getenv('DEBUG_AI3D')) {
+                    $body['debug'] = $this->aiService->getLastHealthCheckResult();
+                }
+                echo json_encode($body);
                 return;
             }
 

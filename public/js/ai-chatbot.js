@@ -239,6 +239,9 @@ class AIChatbot {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ error: `Error HTTP: ${response.status}` }));
+                if (errorData.debug) {
+                    console.log('DEBUG health check:', errorData.debug);
+                }
                 throw new Error(errorData.error || `Error HTTP: ${response.status}`);
             }
 

@@ -12,6 +12,9 @@ class AI3DService {
     private $apiKey;
     private $timeout;
 
+    /** @var array|null Last health check result (url, httpCode, curlError, elapsedMs) for debug */
+    private $lastHealthCheckResult = null;
+
     public function __construct($baseUrl = 'http://localhost:8000', $apiKey = null, $timeout = 30) {
         $this->baseUrl = rtrim($baseUrl, '/');
         $this->apiKey = $apiKey;
@@ -117,6 +120,8 @@ class AI3DService {
         curl_setopt($ch, CURLOPT_FILE, $fp);
         curl_setopt($ch, CURLOPT_TIMEOUT, $this->timeout * 2);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 
         if ($this->apiKey) {
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
@@ -217,6 +222,8 @@ class AI3DService {
         curl_setopt($ch, CURLOPT_TIMEOUT, $this->timeout);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -248,13 +255,32 @@ class AI3DService {
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+            $t0 = microtime(true);
             curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
             curl_close($ch);
 
+            $this->lastHealthCheckResult = [
+                'url' => $url,
+                'httpCode' => $httpCode,
+                'curlError' => $curlError ?: null,
+                'elapsedMs' => round((microtime(true) - $t0) * 1000),
+            ];
             return $httpCode === 200;
         } catch (Exception $e) {
+            $this->lastHealthCheckResult = ['exception' => $e->getMessage()];
             return false;
         }
+    }
+
+    /**
+     * Returns the last health check result for debugging (url, httpCode, curlError, elapsedMs).
+     * @return array|null
+     */
+    public function getLastHealthCheckResult() {
+        return $this->lastHealthCheckResult;
     }
 }
