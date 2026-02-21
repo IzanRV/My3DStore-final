@@ -24,6 +24,8 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Copiar aplicación (sin .env; se inyecta por Railway)
 COPY . /var/www/html/
+# config/database.php está en .gitignore; en el contenedor usamos el example (solo getenv)
+RUN cp /var/www/html/config/database.example.php /var/www/html/config/database.php
 
 # Permisos para uploads y sesiones
 RUN mkdir -p /var/www/html/public/images /var/www/html/storage \
