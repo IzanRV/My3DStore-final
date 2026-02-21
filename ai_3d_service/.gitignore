@@ -24,8 +24,8 @@ uploads/
 output/
 cache/
 
-# Modelos
-models/
+# Modelos (pesos ML en raíz; no ignorar app/models/ paquete Python)
+/models/
 
 # Environment
 .env
