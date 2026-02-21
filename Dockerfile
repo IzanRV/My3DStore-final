@@ -14,8 +14,7 @@ ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 # Dejar solo un MPM (evitar "More than one MPM loaded")
-RUN a2dismod mpm_event 2>/dev/null || true \
-    && a2dismod mpm_worker 2>/dev/null || true \
+RUN for m in event worker; do rm -f /etc/apache2/mods-enabled/mpm_${m}.load /etc/apache2/mods-enabled/mpm_${m}.conf 2>/dev/null; done \
     && a2enmod mpm_prefork
 RUN a2enmod rewrite headers
 
