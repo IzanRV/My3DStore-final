@@ -49,6 +49,10 @@ class CartController {
                 setFlashMessage('Error al añadir producto al carrito', 'error');
             }
             
+            $returnTo = trim($_POST['return_to'] ?? '');
+            if ($returnTo === 'products') {
+                redirect(url('products'));
+            }
             redirect(url('product', ['id' => $productId]));
         }
     }

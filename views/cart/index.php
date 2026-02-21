@@ -1,6 +1,7 @@
 <?php
 $pageTitle = 'Cesta de Compra - My3DStore';
 $useTailwindBody = true;
+$loadStatic3D = true; // Visores 3D en items de la cesta (productos solo con modelo)
 include __DIR__ . '/../../includes/header.php';
 ?>
 
@@ -184,12 +185,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Inicializar visores 3D en items de la cesta (solo modelo, sin imagen)
     var cartViewerContainers = document.querySelectorAll('.cart-static-3d-viewer');
+    var cartViewers = [];
     cartViewerContainers.forEach(function(container, i) {
         if (i >= MAX_CART_VIEWERS) return;
         if (typeof initOneStatic3DViewer !== 'function') return;
         var viewer = initOneStatic3DViewer(container);
-        if (viewer) setTimeout(function() { if (viewer.onWindowResize) viewer.onWindowResize(); }, 0);
+        if (viewer) {
+            cartViewers.push(viewer);
+            setTimeout(function() { if (viewer.onWindowResize) viewer.onWindowResize(); }, 0);
+        }
     });
+    // Redimensionar cuando el layout esté listo (tamaño correcto del contenedor)
+    setTimeout(function() {
+        cartViewers.forEach(function(v) { if (v && v.onWindowResize) v.onWindowResize(); });
+    }, 200);
 
     // Carrusel con flechas en cada item de la cesta
     document.querySelectorAll('.cart-item').forEach(function(row) {

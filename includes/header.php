@@ -4,6 +4,12 @@ startSession();
 $user = getUser();
 $cartCount = getCartCount();
 $pageTitle = $pageTitle ?? 'My3DStore';
+$currentAction = $_GET['action'] ?? '';
+$navHome = ($currentAction === '');
+$navProducts = ($currentAction === 'products' || $currentAction === 'product');
+$navCustomize = ($currentAction === 'customize');
+$navCart = ($currentAction === 'cart' || $currentAction === 'checkout');
+$navAccount = ($currentAction === 'account' || $currentAction === 'login');
 ?>
 <!DOCTYPE html>
 <html class="light" lang="es">
@@ -162,21 +168,21 @@ $pageTitle = $pageTitle ?? 'My3DStore';
 </div>
 </div>
 <nav class="flex items-center gap-1 sm:gap-4">
-<a href="/My3DStore/" class="hidden lg:flex items-center gap-2 px-4 py-2 text-sm font-medium hover:text-primary transition-colors">
+<a href="/My3DStore/" class="hidden lg:flex items-center gap-2 px-4 py-2 text-sm font-medium hover:text-primary transition-colors <?php echo $navHome ? 'text-primary' : 'text-slate-700 dark:text-slate-200'; ?>">
                     Inicio
                 </a>
-<a href="/My3DStore/?action=products" class="hidden lg:flex items-center gap-2 px-4 py-2 text-sm font-medium hover:text-primary transition-colors">
+<a href="/My3DStore/?action=products" class="hidden lg:flex items-center gap-2 px-4 py-2 text-sm font-medium hover:text-primary transition-colors <?php echo $navProducts ? 'text-primary' : 'text-slate-700 dark:text-slate-200'; ?>">
                     Productos
                 </a>
-<a href="/My3DStore/?action=customize" class="hidden lg:flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-white rounded-full hover:bg-primary/90 transition-all shadow-md">
+<a href="/My3DStore/?action=customize" class="hidden lg:flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition-all <?php echo $navCustomize ? 'bg-primary/90 text-white shadow-inner ring-2 ring-primary/50' : 'bg-primary text-white hover:bg-primary/90 shadow-md'; ?>">
                     Personalización
                 </a>
 <div class="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-2 hidden sm:block"></div>
-<a href="/My3DStore/?action=cart" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full flex flex-col items-center">
+<a href="/My3DStore/?action=cart" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full flex flex-col items-center <?php echo $navCart ? 'text-primary' : 'text-slate-700 dark:text-slate-200'; ?>">
 <span class="material-icons-outlined">shopping_cart</span>
-<span class="text-[10px] uppercase font-bold text-primary mt-0.5">Cesta</span>
+<span class="text-[10px] uppercase font-bold mt-0.5">Cesta</span>
 </a>
-<a href="/My3DStore/?action=<?php echo isLoggedIn() ? 'account' : 'login'; ?>" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full flex flex-col items-center">
+<a href="/My3DStore/?action=<?php echo isLoggedIn() ? 'account' : 'login'; ?>" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full flex flex-col items-center <?php echo $navAccount ? 'text-primary' : 'text-slate-700 dark:text-slate-200'; ?>">
 <span class="material-icons-outlined">person</span>
 <span class="text-[10px] uppercase font-bold mt-0.5">Perfil</span>
 </a>

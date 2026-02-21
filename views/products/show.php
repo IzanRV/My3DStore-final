@@ -104,11 +104,13 @@ $fallbackModelUrl = htmlspecialchars(asset('glb/pato.glb'));
                         <input type="hidden" name="quantity" value="1">
                         <button type="submit" class="btn btn-secondary btn-large" style="width: 100%;">Añadir a la cesta</button>
                     </form>
+                    <a href="<?php echo htmlspecialchars(url('customize', ['product_id' => $product['id']])); ?>" class="btn btn-secondary btn-large">Personalizar</a>
                 </div>
             <?php elseif (!isLoggedIn()): ?>
                 <div class="product-actions-detail">
                     <a href="/My3DStore/?action=login" class="btn btn-primary btn-large">Compra ya</a>
                     <a href="/My3DStore/?action=login" class="btn btn-secondary btn-large">Añadir a la cesta</a>
+                    <a href="<?php echo htmlspecialchars(url('customize', ['product_id' => $product['id']])); ?>" class="btn btn-secondary btn-large">Personalizar</a>
                 </div>
             <?php endif; ?>
         </div>

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/Product.php';
 
 class Order {
     private $db;
@@ -8,13 +9,26 @@ class Order {
         $this->db = Database::getInstance();
     }
 
-    public function create($userId, $total, $shippingAddress, $items) {
+    public function create($userId, $total, $shippingAddress, $items, $paymentMethod = 'card', $paymentLast4 = null) {
         $this->db->getConnection()->autocommit(false);
         
         try {
-            // Crear pedido
-            $stmt = $this->db->prepare("INSERT INTO orders (user_id, total, shipping_address) VALUES (?, ?, ?)");
-            $stmt->bind_param("ids", $userId, $total, $shippingAddress);
+            $paymentMethod = in_array($paymentMethod, ['card', 'paypal', 'bizum'], true) ? $paymentMethod : 'card';
+            $paymentLast4 = ($paymentLast4 !== null && $paymentLast4 !== '') ? substr(preg_replace('/\D/', '', $paymentLast4), -4) : null;
+            // Crear pedido (payment_method y payment_last4 opcionales por compatibilidad con BD sin columnas)
+            $hasPayment = false;
+            try {
+                $conn = $this->db->getConnection();
+                $r = $conn->query("SHOW COLUMNS FROM orders LIKE 'payment_method'");
+                $hasPayment = $r && $r->num_rows > 0;
+            } catch (Throwable $e) {}
+            if ($hasPayment) {
+                $stmt = $this->db->prepare("INSERT INTO orders (user_id, total, shipping_address, payment_method, payment_last4) VALUES (?, ?, ?, ?, ?)");
+                $stmt->bind_param("idsss", $userId, $total, $shippingAddress, $paymentMethod, $paymentLast4);
+            } else {
+                $stmt = $this->db->prepare("INSERT INTO orders (user_id, total, shipping_address) VALUES (?, ?, ?)");
+                $stmt->bind_param("ids", $userId, $total, $shippingAddress);
+            }
             $stmt->execute();
             $orderId = $this->db->getLastInsertId();
             
@@ -73,7 +87,7 @@ class Order {
 
     public function getItems($orderId) {
         $stmt = $this->db->prepare("
-            SELECT oi.*, p.name, p.image_url 
+            SELECT oi.*, p.name, p.image_url, p.stl_url, p.material, p.dim_x, p.dim_y, p.dim_z, p.color, p.logo_url, p.logo_side
             FROM order_items oi 
             JOIN products p ON oi.product_id = p.id 
             WHERE oi.order_id = ?

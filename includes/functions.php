@@ -246,6 +246,53 @@ function productModelAssets($product) {
 }
 
 /**
+ * Lista de rutas relativas (stl/...) de modelos para un producto (mismo orden que productModelAssets).
+ * @param array|null $product
+ * @return array Lista de paths como 'stl/123/file.stl'.
+ */
+function productModelPaths($product) {
+    if (!is_array($product)) {
+        return [];
+    }
+    $id = isset($product['id']) ? (int) $product['id'] : 0;
+    $stlDir = __DIR__ . '/../public/stl/';
+
+    $folderPath = $stlDir . $id;
+    if ($id > 0 && is_dir($folderPath)) {
+        $files = listStlGlbInDir($folderPath);
+        if (!empty($files)) {
+            $out = [];
+            foreach ($files as $name) {
+                $out[] = 'stl/' . $id . '/' . $name;
+            }
+            return $out;
+        }
+    }
+
+    $stlUrl = isset($product['stl_url']) ? trim($product['stl_url']) : '';
+    if (preg_match_all('/(\d{4,})/', $stlUrl, $m)) {
+        foreach (array_unique($m[1]) as $folderId) {
+            $folderPath = $stlDir . $folderId;
+            if (is_dir($folderPath)) {
+                $files = listStlGlbInDir($folderPath);
+                if (!empty($files)) {
+                    $out = [];
+                    foreach ($files as $name) {
+                        $out[] = 'stl/' . $folderId . '/' . $name;
+                    }
+                    return $out;
+                }
+            }
+        }
+    }
+
+    if ($stlUrl !== '' && (strpos($stlUrl, '.stl') !== false || strpos($stlUrl, '.glb') !== false)) {
+        return [$stlUrl];
+    }
+    return [];
+}
+
+/**
  * Lista de URLs de imágenes para un producto.
  * Si existe la carpeta public/images/products/{id}/, devuelve todas las imágenes (ordenadas).
  * Si no, devuelve un único elemento con image_url si existe.

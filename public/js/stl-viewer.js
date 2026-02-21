@@ -103,6 +103,9 @@ class STLViewer {
         loader.load(
             url,
             (geometry) => {
+                // Quitar modelo anterior si existe (evitar superponer al cambiar de modelo)
+                if (this.clearModel) this.clearModel();
+
                 // Calcular centro y normalizar
                 geometry.computeVertexNormals();
                 geometry.center();
@@ -172,6 +175,9 @@ class STLViewer {
         loader.load(
             url,
             (gltf) => {
+                // Quitar modelo anterior si existe (evitar superponer al cambiar de modelo)
+                if (this.clearModel) this.clearModel();
+
                 // GLB puede contener múltiples objetos, usar la escena completa
                 this.model = gltf.scene;
                 
@@ -380,6 +386,38 @@ class STLViewer {
             this.logoTexture = null;
         }
         this.logoSide = null;
+    }
+
+    /**
+     * Quita el modelo actual del visor (sin destruir el renderer). Útil para cargar otro modelo.
+     */
+    clearModel() {
+        this.removeLogo();
+        if (this.model) {
+            this.scene.remove(this.model);
+            if (this.model.traverse) {
+                this.model.traverse((child) => {
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material) {
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach(mat => {
+                                if (mat.map) mat.map.dispose();
+                                mat.dispose();
+                            });
+                        } else {
+                            if (child.material.map) child.material.map.dispose();
+                            child.material.dispose();
+                        }
+                    }
+                });
+            } else {
+                if (this.model.geometry) this.model.geometry.dispose();
+                if (this.model.material) this.model.material.dispose();
+            }
+            this.model = null;
+        }
+        this.modelBaseSize = null;
+        this.modelBaseCenter = null;
     }
 
     setLogoSide(side) {

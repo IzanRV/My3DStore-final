@@ -259,46 +259,72 @@ class AI3DController {
             }
 
             $jobId = $_POST['job_id'] ?? $_GET['job_id'] ?? null;
+            $modelUrl = trim($_POST['model_url'] ?? $_GET['model_url'] ?? '');
             $prompt = trim($_POST['prompt'] ?? $_GET['prompt'] ?? '');
+            $stlPath = null;
 
-            if (!$jobId) {
+            if ($jobId) {
+                // Publicar desde modelo generado por IA
+                $fileInfo = $this->aiService->getFileInfo($jobId);
+                if (!isset($fileInfo['filename']) || $fileInfo['filename'] === '') {
+                    http_response_code(404);
+                    echo json_encode(['error' => 'Archivo no encontrado para este job']);
+                    return;
+                }
+                $originalName = $fileInfo['filename'];
+                $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+                if ($ext !== 'stl' && $ext !== 'obj' && $ext !== 'glb') {
+                    $ext = 'stl';
+                }
+                $safeBasename = 'ai_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $jobId) . '_' . time() . '.' . $ext;
+                $stlPath = $this->stlDir . '/' . $safeBasename;
+                if (!$this->aiService->downloadFile($jobId, $stlPath)) {
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Error al descargar el archivo del servicio']);
+                    return;
+                }
+                $stlUrl = 'stl/' . $safeBasename;
+                $productName = trim($_POST['name'] ?? '');
+                if ($productName === '') {
+                    $productName = $prompt !== ''
+                        ? $this->extractProductName($prompt)
+                        : 'Modelo generado por IA - ' . date('d/m/Y H:i');
+                }
+                $description = trim($_POST['description'] ?? '');
+                if ($description === '') {
+                    $description = 'Modelo 3D generado automáticamente por IA. '
+                        . ($prompt !== '' ? 'Descripción: "' . $prompt . '". ' : '')
+                        . 'Añadido al catálogo desde el personalizador.';
+                }
+            } elseif ($modelUrl !== '') {
+                // Publicar desde modelo existente (personalización de producto)
+                $modelUrl = str_replace('\\', '/', $modelUrl);
+                if (strpos($modelUrl, '..') !== false || !preg_match('#^stl/[a-zA-Z0-9_\-./]+\.(stl|glb|obj)$#i', $modelUrl)) {
+                    http_response_code(400);
+                    echo json_encode(['error' => 'Ruta de modelo no válida']);
+                    return;
+                }
+                $fullPath = $this->stlDir . '/' . preg_replace('#^stl/#', '', $modelUrl);
+                if (!is_file($fullPath)) {
+                    http_response_code(404);
+                    echo json_encode(['error' => 'Archivo del modelo no encontrado']);
+                    return;
+                }
+                $stlUrl = $modelUrl;
+                $productName = trim($_POST['name'] ?? '');
+                $description = trim($_POST['description'] ?? '');
+                if ($productName === '') {
+                    http_response_code(400);
+                    echo json_encode(['error' => 'Indica un nombre para el nuevo producto']);
+                    return;
+                }
+                if ($description === '') {
+                    $description = $productName;
+                }
+            } else {
                 http_response_code(400);
-                echo json_encode(['error' => 'job_id es requerido']);
+                echo json_encode(['error' => 'Indica job_id (modelo IA) o model_url (modelo de un producto)']);
                 return;
-            }
-
-            $fileInfo = $this->aiService->getFileInfo($jobId);
-            if (!isset($fileInfo['filename']) || $fileInfo['filename'] === '') {
-                http_response_code(404);
-                echo json_encode(['error' => 'Archivo no encontrado para este job']);
-                return;
-            }
-
-            $originalName = $fileInfo['filename'];
-            $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-            if ($ext !== 'stl' && $ext !== 'obj' && $ext !== 'glb') {
-                $ext = 'stl';
-            }
-            $safeBasename = 'ai_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $jobId) . '_' . time() . '.' . $ext;
-            $stlPath = $this->stlDir . '/' . $safeBasename;
-
-            if (!$this->aiService->downloadFile($jobId, $stlPath)) {
-                http_response_code(500);
-                echo json_encode(['error' => 'Error al descargar el archivo del servicio']);
-                return;
-            }
-
-            $productName = trim($_POST['name'] ?? '');
-            if ($productName === '') {
-                $productName = $prompt !== ''
-                    ? $this->extractProductName($prompt)
-                    : 'Modelo generado por IA - ' . date('d/m/Y H:i');
-            }
-            $description = trim($_POST['description'] ?? '');
-            if ($description === '') {
-                $description = 'Modelo 3D generado automáticamente por IA. '
-                    . ($prompt !== '' ? 'Descripción: "' . $prompt . '". ' : '')
-                    . 'Añadido al catálogo desde el personalizador.';
             }
             $price = isset($_POST['price']) ? floatval($_POST['price']) : 19.99;
             if ($price <= 0) {
@@ -329,7 +355,6 @@ class AI3DController {
                 }
             }
             $imageUrl = '';
-            $stlUrl = 'stl/' . $safeBasename;
             require_once __DIR__ . '/../models/User.php';
             $userModel = new User();
             $user = $userModel->findById($_SESSION['user_id'] ?? 0);
@@ -339,26 +364,31 @@ class AI3DController {
             try {
                 $newId = $productModel->createPublish($productName, $description, $price, $imageUrl, $stlUrl, $material, $dimX, $dimY, $dimZ, $author, $color, $logoUrl, $logoSide);
             } catch (Throwable $e) {
-                @unlink($stlPath);
+                if ($stlPath !== null) {
+                    @unlink($stlPath);
+                }
                 http_response_code(500);
                 echo json_encode(['error' => 'Error en la base de datos: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
                 return;
             }
             if (!$newId) {
-                @unlink($stlPath);
+                if ($stlPath !== null) {
+                    @unlink($stlPath);
+                }
                 http_response_code(500);
                 echo json_encode(['error' => 'Error al crear el producto en la base de datos']);
                 return;
             }
 
             $productUrl = url('product', ['id' => $newId]);
+            $stlBasename = $jobId ? $safeBasename : basename($stlUrl);
 
             echo json_encode([
                 'success' => true,
                 'product_id' => (int) $newId,
                 'product_url' => $productUrl,
                 'name' => $productName,
-                'stl_filename' => $safeBasename,
+                'stl_filename' => $stlBasename,
             ], JSON_UNESCAPED_UNICODE);
         } catch (Exception $e) {
             http_response_code(500);

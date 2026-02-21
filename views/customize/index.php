@@ -1,11 +1,30 @@
 <?php
 $pageTitle = 'My3DStore - Personalizador 3D';
-$useTailwindBody = true; // Activar clases Tailwind para esta página
-$loadSTLViewer = true; // Activar carga de Three.js
+$useTailwindBody = true;
+$loadSTLViewer = true;
 $customizeJobId = isset($_GET['job_id']) ? preg_replace('/[^a-zA-Z0-9\-_]/', '', trim($_GET['job_id'])) : '';
 $customizePrompt = isset($_GET['prompt']) ? trim($_GET['prompt']) : '';
 if (mb_strlen($customizePrompt) > 500) {
     $customizePrompt = mb_substr($customizePrompt, 0, 500);
+}
+$customizeProduct = null;
+$customizeModelUrls = [];
+$customizeModelPaths = [];
+$customizeModelIndex = isset($_GET['model_index']) ? max(0, (int)$_GET['model_index']) : 0;
+if (!empty($_GET['product_id']) && !$customizeJobId) {
+    require_once __DIR__ . '/../../models/Product.php';
+    $productModel = new Product();
+    $customizeProduct = $productModel->findById((int)$_GET['product_id']);
+    if ($customizeProduct) {
+        $customizeModelUrls = productModelAssets($customizeProduct);
+        $customizeModelPaths = productModelPaths($customizeProduct);
+        if ($customizeModelIndex >= count($customizeModelUrls)) {
+            $customizeModelIndex = 0;
+        }
+    } else {
+        $customizeModelUrls = [];
+        $customizeModelPaths = [];
+    }
 }
 include __DIR__ . '/../../includes/header.php';
 ?>
@@ -23,7 +42,22 @@ include __DIR__ . '/../../includes/header.php';
     <aside class="w-full md:w-80 lg:w-96 bg-card-light dark:bg-card-dark border-r border-slate-200 dark:border-slate-800 flex flex-col overflow-y-auto custom-scrollbar">
         <div class="p-6">
             <h1 class="text-xl font-bold mb-1">Personalizador 3D</h1>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mb-8">Diseña tu producto a medida</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Diseña tu producto a medida</p>
+            
+            <?php if ($customizeProduct && !empty($customizeModelUrls)): ?>
+            <div class="mb-6 p-3 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20">
+                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Producto</p>
+                <p class="font-bold text-slate-800 dark:text-slate-100"><?php echo htmlspecialchars($customizeProduct['name']); ?></p>
+                <?php if (count($customizeModelUrls) > 1): ?>
+                <label class="block mt-3 text-xs font-medium text-slate-600 dark:text-slate-300">Elegir modelo a personalizar</label>
+                <select id="customize-model-select" class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-sm">
+                    <?php foreach ($customizeModelUrls as $i => $url): ?>
+                    <option value="<?php echo $i; ?>" <?php echo $i === $customizeModelIndex ? 'selected' : ''; ?>>Modelo <?php echo $i + 1; ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
             
             <div class="space-y-6 mb-8">
                 <!-- Dimensiones -->
@@ -279,6 +313,12 @@ include __DIR__ . '/../../includes/header.php';
     window.CUSTOMIZE_JOB_ID = <?php echo json_encode($customizeJobId); ?>;
     window.CUSTOMIZE_PROMPT = <?php echo json_encode($customizePrompt, JSON_UNESCAPED_UNICODE); ?>;
     window.BASE_PATH = '<?php echo addslashes(getBasePath()); ?>';
+    window.CUSTOMIZE_PRODUCT = <?php echo json_encode([
+        'product' => $customizeProduct,
+        'modelUrls' => $customizeModelUrls,
+        'modelPaths' => isset($customizeModelPaths) ? $customizeModelPaths : [],
+        'modelIndex' => $customizeModelIndex,
+    ], JSON_UNESCAPED_UNICODE); ?>;
 </script>
 <script src="<?php echo htmlspecialchars(asset('js/stl-viewer.js')); ?>"></script>
 <script src="<?php echo htmlspecialchars(asset('js/ai-chatbot.js')); ?>"></script>
@@ -326,13 +366,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     const hasJobInUrl = !!window.CUSTOMIZE_JOB_ID;
+    const hasProductInUrl = !!(window.CUSTOMIZE_PRODUCT && window.CUSTOMIZE_PRODUCT.modelUrls && window.CUSTOMIZE_PRODUCT.modelUrls.length > 0);
+    let currentPublishModelIndex = 0;
     if (hasJobInUrl && welcomeDiv) welcomeDiv.style.display = 'none';
 
-    // Inicializar chatbot con visor; abrir por defecto si no hay modelo
+    // Inicializar chatbot con visor; abrir por defecto solo si no hay job ni producto
     const chatbot = new AIChatbot('ai-chatbot', viewer, {
         onModelReady: onModelReady,
         onViewerCleared: onViewerCleared,
-        openByDefault: !hasJobInUrl
+        openByDefault: !hasJobInUrl && !hasProductInUrl
     });
 
     // Si hay job_id en la URL: no cargar GLB; hacer polling y cargar modelo en visor
@@ -385,8 +427,68 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (loadingDiv) loadingDiv.innerHTML = '<p class="text-slate-600 dark:text-slate-400">Tiempo de espera agotado. Prueba de nuevo más tarde.</p>';
         })();
+    } else if (window.CUSTOMIZE_PRODUCT && window.CUSTOMIZE_PRODUCT.modelUrls && window.CUSTOMIZE_PRODUCT.modelUrls.length > 0) {
+        // Llegar desde un producto: cargar su modelo en el visor
+        const cp = window.CUSTOMIZE_PRODUCT;
+        const product = cp.product || {};
+        const modelUrls = cp.modelUrls;
+        let currentModelIndex = typeof cp.modelIndex === 'number' ? cp.modelIndex : 0;
+
+        function toAbsoluteUrl(url) {
+            if (!url || url.indexOf('http') === 0) return url;
+            const origin = window.location.origin;
+            return origin + (url.charAt(0) === '/' ? url : '/' + url);
+        }
+
+        function loadProductModelAtIndex(index) {
+            if (index < 0 || index >= modelUrls.length) return;
+            const url = toAbsoluteUrl(modelUrls[index]);
+            const isGlb = /\.glb$/i.test(url);
+            if (loadingDiv) {
+                loadingDiv.innerHTML = '<div class="text-center"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div><p class="text-slate-600 dark:text-slate-400">Cargando modelo...</p></div>';
+                loadingDiv.style.display = '';
+            }
+            if (viewer.clearModel) viewer.clearModel();
+            const onDone = function() {
+                if (loadingDiv) loadingDiv.style.display = 'none';
+                const dimX = product.dim_x != null && product.dim_x !== '' ? parseFloat(product.dim_x) : 60;
+                const dimY = product.dim_y != null && product.dim_y !== '' ? parseFloat(product.dim_y) : 85;
+                const dimZ = product.dim_z != null && product.dim_z !== '' ? parseFloat(product.dim_z) : 45;
+                const widthEl = document.getElementById('width');
+                const heightEl = document.getElementById('height');
+                const depthEl = document.getElementById('depth');
+                if (widthEl) { widthEl.value = dimX; document.getElementById('width-value').textContent = dimX + 'mm'; }
+                if (heightEl) { heightEl.value = dimY; document.getElementById('height-value').textContent = dimY + 'mm'; }
+                if (depthEl) { depthEl.value = dimZ; document.getElementById('depth-value').textContent = dimZ + 'mm'; }
+                applyDimensionsToViewer();
+                if (product.color) {
+                    const hex = (product.color + '').replace(/^#/, '');
+                    const num = parseInt(hex, 16);
+                    if (!isNaN(num) && viewer.setColor) viewer.setColor(num);
+                }
+                onModelReady();
+            };
+            if (isGlb) {
+                viewer.loadGLB(url, function(p) { if (p && p.success) onDone(); });
+            } else {
+                viewer.loadSTL(url, function(p) { if (p && p.success) onDone(); });
+            }
+        }
+
+        currentPublishModelIndex = currentModelIndex;
+        loadProductModelAtIndex(currentModelIndex);
+
+        const modelSelect = document.getElementById('customize-model-select');
+        if (modelSelect && modelUrls.length > 1) {
+            modelSelect.addEventListener('change', function() {
+                const idx = parseInt(this.value, 10);
+                if (isNaN(idx)) return;
+                currentModelIndex = idx;
+                currentPublishModelIndex = idx;
+                loadProductModelAtIndex(idx);
+            });
+        }
     } else {
-        // Sin job_id: no cargar modelo; se muestra el cartel "Diseña tu producto con la IA" y el chatbot abierto
         if (loadingDiv) loadingDiv.style.display = 'none';
     }
 
@@ -563,9 +665,9 @@ document.addEventListener('DOMContentLoaded', function() {
             window.location.href = (window.BASE_PATH || '/') + '?action=login';
             return;
         <?php endif; ?>
-        if (!window.CUSTOMIZE_JOB_ID) {
+        if (!viewer || !viewer.model) {
             if (publishError) {
-                publishError.textContent = 'No hay un modelo generado para publicar. Genera uno primero con el asistente.';
+                publishError.textContent = 'No hay un modelo para publicar. Carga uno desde un producto o genera uno con el asistente.';
                 publishError.classList.remove('hidden');
             }
             return;
@@ -611,7 +713,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (publishError) { publishError.textContent = 'Indica un nombre para el producto.'; publishError.classList.remove('hidden'); }
             return;
         }
-        const jobId = window.CUSTOMIZE_JOB_ID;
+        const jobId = window.CUSTOMIZE_JOB_ID || '';
+        const cp = window.CUSTOMIZE_PRODUCT;
+        const modelPath = (cp && cp.modelPaths && cp.modelPaths[currentPublishModelIndex]) ? cp.modelPaths[currentPublishModelIndex] : '';
         const price = basePrice + materialPrice;
         const material = document.querySelector('.material-btn.active')?.dataset.material || 'PLA';
         const dimX = document.getElementById('width')?.value || 100;
@@ -621,7 +725,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const color = (colorEl && colorEl.dataset.color) ? (colorEl.dataset.color.startsWith('#') ? colorEl.dataset.color : '#' + colorEl.dataset.color) : '';
         const formData = new FormData();
         formData.append('action', 'saveAsProduct');
-        formData.append('job_id', jobId);
+        if (jobId) formData.append('job_id', jobId);
+        if (modelPath) formData.append('model_url', modelPath);
         formData.append('name', name);
         formData.append('description', description || name);
         formData.append('price', price.toFixed(2));

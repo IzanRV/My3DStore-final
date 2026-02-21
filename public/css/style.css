@@ -978,6 +978,27 @@ body {
     min-height: 120px;
 }
 
+.payment-methods {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+.payment-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+.payment-option input { width: auto; }
+.payment-note, .card-fields .form-row {
+    margin-top: 0.5rem;
+}
+.card-fields .form-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 1rem;
+}
+
 /* Orders */
 .orders-page {
     margin: 2rem 0;
@@ -1464,7 +1485,8 @@ body {
         grid-column: 2;
     }
     
-    .form-row {
+    .form-row,
+    .card-fields .form-row {
         grid-template-columns: 1fr;
     }
     

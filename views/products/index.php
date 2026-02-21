@@ -212,6 +212,7 @@ $currentSearch = $_GET['search'] ?? '';
                                     <form method="POST" action="/My3DStore/?action=cart-add" class="flex-1">
                                         <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
                                         <input type="hidden" name="quantity" value="1">
+                                        <input type="hidden" name="return_to" value="products">
                                         <button 
                                             type="submit" 
                                             class="bg-primary hover:bg-blue-600 text-white text-[10px] uppercase font-bold py-2 px-3 rounded shadow-lg transition-colors w-full"
