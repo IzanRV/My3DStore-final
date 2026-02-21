@@ -39,7 +39,7 @@ include __DIR__ . '/../../includes/header.php';
                     </div>
                 </div>
                 <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700">
-                    <a href="/My3DStore/?action=orders" class="inline-block bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-800 dark:text-slate-100 font-medium py-2 px-4 rounded-xl transition-colors">
+                    <a href="<?php echo htmlspecialchars(url('orders')); ?>" class="inline-block bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-800 dark:text-slate-100 font-medium py-2 px-4 rounded-xl transition-colors">
                         Volver a Pedidos
                     </a>
                 </div>

@@ -5,7 +5,7 @@ include __DIR__ . '/../includes/header.php';
 
 // Obtener el archivo STL desde la URL o usar el predeterminado
 $stlFile = $_GET['file'] ?? 'Geekko.stl';
-$stlPath = '/My3DStore/public/stl/' . htmlspecialchars($stlFile);
+$stlPath = asset('stl/' . $stlFile);
 ?>
 
 <div class="stl-viewer-page">
@@ -50,7 +50,7 @@ $stlPath = '/My3DStore/public/stl/' . htmlspecialchars($stlFile);
     <div class="available-models">
         <h3>Modelos disponibles</h3>
         <ul>
-            <li><a href="/My3DStore/?action=stl-viewer&file=Geekko.stl">Geekko.stl</a></li>
+            <li><a href="<?php echo htmlspecialchars(url('stl-viewer', ['file' => 'Geekko.stl'])); ?>">Geekko.stl</a></li>
         </ul>
     </div>
 </div>

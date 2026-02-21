@@ -55,7 +55,7 @@ class AdminController {
             
             if ($this->productModel->create($name, $description, $price, $imageUrl)) {
                 setFlashMessage('Producto creado correctamente', 'success');
-                redirect('/My3DStore/?action=admin-products');
+                redirect(url('admin-products'));
             } else {
                 setFlashMessage('Error al crear el producto', 'error');
             }
@@ -72,7 +72,7 @@ class AdminController {
         
         if (!$product) {
             setFlashMessage('Producto no encontrado', 'error');
-            redirect('/My3DStore/public/index.php?action=admin-products');
+            redirect(url('admin-products'));
         }
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -89,7 +89,7 @@ class AdminController {
             
             if ($this->productModel->update($id, $name, $description, $price, $imageUrl)) {
                 setFlashMessage('Producto actualizado correctamente', 'success');
-                redirect('/My3DStore/?action=admin-products');
+                redirect(url('admin-products'));
             } else {
                 setFlashMessage('Error al actualizar el producto', 'error');
             }
@@ -111,7 +111,7 @@ class AdminController {
             }
         }
         
-        redirect('/My3DStore/public/index.php?action=admin-products');
+        redirect(url('admin-products'));
     }
 
     public function orders() {
@@ -136,7 +136,7 @@ class AdminController {
             }
         }
         
-        redirect('/My3DStore/?action=admin-orders');
+        redirect(url('admin-orders'));
     }
 
     public function users() {

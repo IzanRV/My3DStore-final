@@ -98,10 +98,10 @@ include __DIR__ . '/../includes/header.php';
                         Personaliza tus propios diseños o elige de nuestro catálogo curado de productos impresos con la más alta calidad y materiales sostenibles.
                     </p>
 <div class="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-4">
-<a href="/My3DStore/?action=products" class="px-8 py-4 bg-primary text-white font-bold rounded-2xl hover:shadow-xl hover:-translate-y-1 transition-all">
+<a href="<?php echo htmlspecialchars(url('products')); ?>" class="px-8 py-4 bg-primary text-white font-bold rounded-2xl hover:shadow-xl hover:-translate-y-1 transition-all">
                             Explorar catálogo
                         </a>
-<a href="/My3DStore/?action=customize" class="px-8 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center gap-2">
+<a href="<?php echo htmlspecialchars(url('customize')); ?>" class="px-8 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center gap-2">
 <span class="material-icons-outlined">auto_fix_high</span>
                             Diseñar con IA
                         </a>
@@ -192,7 +192,7 @@ include __DIR__ . '/../includes/header.php';
                             </h2>
 <p class="text-slate-500 mt-1">Nuestra selección más versátil y colorida</p>
 </div>
-<a href="/My3DStore/?action=products&material=PLA" class="text-primary font-semibold hover:underline flex items-center gap-1">
+<a href="<?php echo htmlspecialchars(url('products', ['material' => 'PLA'])); ?>" class="text-primary font-semibold hover:underline flex items-center gap-1">
                             Ver todo <span class="material-icons-outlined text-sm">arrow_forward</span>
 </a>
 </div>
@@ -256,7 +256,7 @@ include __DIR__ . '/../includes/header.php';
                             </h2>
 <p class="text-slate-500 mt-1">Durabilidad excepcional y acabados premium</p>
 </div>
-<a href="/My3DStore/?action=products&material=Metal" class="text-primary font-semibold hover:underline flex items-center gap-1">
+<a href="<?php echo htmlspecialchars(url('products', ['material' => 'Metal'])); ?>" class="text-primary font-semibold hover:underline flex items-center gap-1">
                             Ver todo <span class="material-icons-outlined text-sm">arrow_forward</span>
 </a>
 </div>
@@ -320,7 +320,7 @@ include __DIR__ . '/../includes/header.php';
                             </h2>
 <p class="text-slate-500 mt-1">Diseños naturales y sostenibles</p>
 </div>
-<a href="/My3DStore/?action=products&material=Madera" class="text-primary font-semibold hover:underline flex items-center gap-1">
+<a href="<?php echo htmlspecialchars(url('products', ['material' => 'Madera'])); ?>" class="text-primary font-semibold hover:underline flex items-center gap-1">
                             Ver todo <span class="material-icons-outlined text-sm">arrow_forward</span>
 </a>
 </div>
@@ -384,7 +384,7 @@ include __DIR__ . '/../includes/header.php';
                             </h2>
 <p class="text-slate-500 mt-1">Acabados elegantes y artesanales</p>
 </div>
-<a href="/My3DStore/?action=products&material=Ceramica" class="text-primary font-semibold hover:underline flex items-center gap-1">
+<a href="<?php echo htmlspecialchars(url('products', ['material' => 'Ceramica'])); ?>" class="text-primary font-semibold hover:underline flex items-center gap-1">
                             Ver todo <span class="material-icons-outlined text-sm">arrow_forward</span>
 </a>
 </div>
@@ -449,7 +449,7 @@ include __DIR__ . '/../includes/header.php';
                             </h2>
 <p class="text-slate-500 mt-1">Nuestra selección de productos</p>
 </div>
-<a href="/My3DStore/?action=products&material=<?php echo urlencode($material); ?>" class="text-primary font-semibold hover:underline flex items-center gap-1">
+<a href="<?php echo htmlspecialchars(url('products', ['material' => $material])); ?>" class="text-primary font-semibold hover:underline flex items-center gap-1">
                             Ver todo <span class="material-icons-outlined text-sm">arrow_forward</span>
 </a>
 </div>

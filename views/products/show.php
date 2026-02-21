@@ -98,8 +98,8 @@ $fallbackModelUrl = htmlspecialchars(asset('glb/pato.glb'));
             
             <?php if (isLoggedIn()): ?>
                 <div class="product-actions-detail">
-                    <a href="/My3DStore/?action=checkout&product_id=<?php echo $product['id']; ?>&quantity=1" class="btn btn-primary btn-large">Compra ya</a>
-                    <form method="POST" action="/My3DStore/?action=cart-add" style="flex: 1;">
+                    <a href="<?php echo htmlspecialchars(url('checkout', ['product_id' => $product['id'], 'quantity' => 1])); ?>" class="btn btn-primary btn-large">Compra ya</a>
+                    <form method="POST" action="<?php echo htmlspecialchars(url('cart-add')); ?>" style="flex: 1;">
                         <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
                         <input type="hidden" name="quantity" value="1">
                         <button type="submit" class="btn btn-secondary btn-large" style="width: 100%;">Añadir a la cesta</button>
@@ -108,8 +108,8 @@ $fallbackModelUrl = htmlspecialchars(asset('glb/pato.glb'));
                 </div>
             <?php elseif (!isLoggedIn()): ?>
                 <div class="product-actions-detail">
-                    <a href="/My3DStore/?action=login" class="btn btn-primary btn-large">Compra ya</a>
-                    <a href="/My3DStore/?action=login" class="btn btn-secondary btn-large">Añadir a la cesta</a>
+                    <a href="<?php echo htmlspecialchars(url('login')); ?>" class="btn btn-primary btn-large">Compra ya</a>
+                    <a href="<?php echo htmlspecialchars(url('login')); ?>" class="btn btn-secondary btn-large">Añadir a la cesta</a>
                     <a href="<?php echo htmlspecialchars(url('customize', ['product_id' => $product['id']])); ?>" class="btn btn-secondary btn-large">Personalizar</a>
                 </div>
             <?php endif; ?>
@@ -122,7 +122,7 @@ $fallbackModelUrl = htmlspecialchars(asset('glb/pato.glb'));
         <?php if (isLoggedIn() && $canReview): ?>
             <div class="review-form-container">
                 <h3>Deja tu reseña</h3>
-                <form method="POST" action="/My3DStore/?action=create-review" class="review-form">
+                <form method="POST" action="<?php echo htmlspecialchars(url('create-review')); ?>" class="review-form">
                     <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
                     <div class="form-group">
                         <label>Calificación:</label>

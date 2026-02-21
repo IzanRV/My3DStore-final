@@ -49,14 +49,14 @@ class ProductController {
         
         if (!$id) {
             setFlashMessage('Producto no encontrado', 'error');
-            redirect('/My3DStore/?action=products');
+            redirect(url('products'));
         }
         
         $product = $this->productModel->findById($id);
         
         if (!$product) {
             setFlashMessage('Producto no encontrado', 'error');
-            redirect('/My3DStore/?action=products');
+            redirect(url('products'));
         }
         
         $reviews = $this->reviewModel->getByProductId($id);
@@ -81,12 +81,12 @@ class ProductController {
             
             if ($rating < 1 || $rating > 5) {
                 setFlashMessage('La calificación debe estar entre 1 y 5', 'error');
-                redirect("/My3DStore/?action=product&id=$productId");
+                redirect(url('product', ['id' => $productId]));
             }
             
             if ($this->reviewModel->hasUserReviewed($productId, $userId)) {
                 setFlashMessage('Ya has dejado una reseña para este producto', 'error');
-                redirect("/My3DStore/?action=product&id=$productId");
+                redirect(url('product', ['id' => $productId]));
             }
             
             if ($this->reviewModel->create($productId, $userId, $rating, $comment)) {
@@ -95,7 +95,7 @@ class ProductController {
                 setFlashMessage('Error al publicar la reseña', 'error');
             }
             
-                redirect("/My3DStore/?action=product&id=$productId");
+                redirect(url('product', ['id' => $productId]));
         }
     }
 }

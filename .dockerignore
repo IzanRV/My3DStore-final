@@ -1,44 +1,12 @@
-# Git
 .git
-.gitignore
-.gitattributes
-
-# Docker
-docker-compose.yml
-Dockerfile*
-.dockerignore
-
-# Documentación
-*.md
-README*
-
-# Archivos de configuración local
 .env
-config/*.php
-!config/*.php.example
-
-# Archivos temporales
+.env.*
+!.env.example
+node_modules
+vendor
+.idea
+.vscode
 *.log
-*.tmp
-*.swp
-*.swo
-*~
-
-# Node modules (si hay)
-node_modules/
-
-# Archivos generados
-public/glb/generated/*
-public/stl/generated/*
-!public/glb/generated/.gitkeep
-!public/stl/generated/.gitkeep
-
-# Archivos de sistema
+storage/*.log
 .DS_Store
 Thumbs.db
-.vscode/
-.idea/
-
-# Base de datos local
-*.sql
-!database/schema.sql

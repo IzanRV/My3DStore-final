@@ -10,17 +10,17 @@ include __DIR__ . '/../../../includes/header.php';
         <div class="stat-card">
             <h3>Productos</h3>
             <p class="stat-number"><?php echo $totalProducts; ?></p>
-            <a href="/My3DStore/?action=admin-products" class="stat-link">Gestionar</a>
+            <a href="<?php echo htmlspecialchars(url('admin-products')); ?>" class="stat-link">Gestionar</a>
         </div>
         <div class="stat-card">
             <h3>Pedidos</h3>
             <p class="stat-number"><?php echo $totalOrders; ?></p>
-            <a href="/My3DStore/?action=admin-orders" class="stat-link">Gestionar</a>
+            <a href="<?php echo htmlspecialchars(url('admin-orders')); ?>" class="stat-link">Gestionar</a>
         </div>
         <div class="stat-card">
             <h3>Usuarios</h3>
             <p class="stat-number"><?php echo $totalUsers; ?></p>
-            <a href="/My3DStore/?action=admin-users" class="stat-link">Ver</a>
+            <a href="<?php echo htmlspecialchars(url('admin-users')); ?>" class="stat-link">Ver</a>
         </div>
         <div class="stat-card">
             <h3>Ingresos</h3>
@@ -29,9 +29,9 @@ include __DIR__ . '/../../../includes/header.php';
     </div>
     
     <div class="admin-links">
-        <a href="/My3DStore/?action=admin-products" class="btn btn-primary">Gestionar Productos</a>
-        <a href="/My3DStore/?action=admin-orders" class="btn btn-primary">Gestionar Pedidos</a>
-        <a href="/My3DStore/?action=admin-users" class="btn btn-primary">Ver Usuarios</a>
+        <a href="<?php echo htmlspecialchars(url('admin-products')); ?>" class="btn btn-primary">Gestionar Productos</a>
+        <a href="<?php echo htmlspecialchars(url('admin-orders')); ?>" class="btn btn-primary">Gestionar Pedidos</a>
+        <a href="<?php echo htmlspecialchars(url('admin-users')); ?>" class="btn btn-primary">Ver Usuarios</a>
     </div>
 </div>
 

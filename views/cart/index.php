@@ -15,7 +15,7 @@ include __DIR__ . '/../../includes/header.php';
     <?php if (empty($items)): ?>
         <div class="text-center py-12">
             <p class="text-slate-500 text-lg mb-4">Tu carrito está vacío.</p>
-            <a href="/My3DStore/?action=products" class="inline-block bg-primary hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition-colors">
+            <a href="<?php echo htmlspecialchars(url('products')); ?>" class="inline-block bg-primary hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition-colors">
                 Ver Productos
             </a>
         </div>
@@ -77,7 +77,7 @@ include __DIR__ . '/../../includes/header.php';
                             <div>
                                 <div class="flex justify-between items-start">
                                     <h3 class="font-bold text-lg"><?php echo htmlspecialchars($item['name']); ?></h3>
-                                    <form method="POST" action="/My3DStore/?action=cart-remove" class="inline">
+                                    <form method="POST" action="<?php echo htmlspecialchars(url('cart-remove')); ?>" class="inline">
                                         <input type="hidden" name="product_id" value="<?php echo $item['product_id']; ?>">
                                         <button 
                                             type="submit" 
@@ -97,7 +97,7 @@ include __DIR__ . '/../../includes/header.php';
                             <div class="flex justify-between items-center mt-4">
                                 <!-- Selector de cantidad -->
                                 <div class="flex items-center border border-slate-200 dark:border-slate-600 rounded-lg">
-                                    <form method="POST" action="/My3DStore/?action=cart-update" class="flex items-center" id="quantityForm<?php echo $item['product_id']; ?>">
+                                    <form method="POST" action="<?php echo htmlspecialchars(url('cart-update')); ?>" class="flex items-center" id="quantityForm<?php echo $item['product_id']; ?>">
                                         <input type="hidden" name="product_id" value="<?php echo $item['product_id']; ?>">
                                         <button 
                                             type="button"
@@ -157,7 +157,7 @@ include __DIR__ . '/../../includes/header.php';
                     </div>
                     
                     <a 
-                        href="/My3DStore/?action=checkout" 
+                        href="<?php echo htmlspecialchars(url('checkout')); ?>" 
                         class="w-full bg-primary hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-colors shadow-lg shadow-blue-500/20 mb-4 block text-center"
                     >
                         Tramitar pedido

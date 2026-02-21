@@ -28,7 +28,7 @@ $currentSearch = $_GET['search'] ?? '';
 
 <main class="max-w-7xl mx-auto px-6 py-8 flex flex-col md:flex-row gap-8">
     <aside class="w-full md:w-64 space-y-8">
-        <form method="GET" action="/My3DStore/" id="filterForm">
+        <form method="GET" action="<?php echo htmlspecialchars(getBasePath()); ?>" id="filterForm">
             <input type="hidden" name="action" value="products">
             <?php if ($currentSearch): ?>
                 <input type="hidden" name="search" value="<?php echo htmlspecialchars($currentSearch); ?>">
@@ -209,7 +209,7 @@ $currentSearch = $_GET['search'] ?? '';
                             <?php endif; ?>
                             <div class="absolute bottom-4 left-0 right-0 flex justify-center space-x-2 px-2 z-10">
                                 <?php if (isLoggedIn()): ?>
-                                    <form method="POST" action="/My3DStore/?action=cart-add" class="flex-1">
+                                    <form method="POST" action="<?php echo htmlspecialchars(url('cart-add')); ?>" class="flex-1">
                                         <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
                                         <input type="hidden" name="quantity" value="1">
                                         <input type="hidden" name="return_to" value="products">
@@ -221,20 +221,20 @@ $currentSearch = $_GET['search'] ?? '';
                                         </button>
                                     </form>
                                     <a 
-                                        href="/My3DStore/?action=customize&product_id=<?php echo $product['id']; ?>"
+                                        href="<?php echo htmlspecialchars(url('customize', ['product_id' => $product['id']])); ?>"
                                         class="bg-blue-900 hover:bg-blue-800 text-white text-[10px] uppercase font-bold py-2 px-3 rounded shadow-lg transition-colors flex-1 text-center"
                                     >
                                         Personalizar
                                     </a>
                                 <?php else: ?>
                                     <a 
-                                        href="/My3DStore/?action=login"
+                                        href="<?php echo htmlspecialchars(url('login')); ?>"
                                         class="bg-primary hover:bg-blue-600 text-white text-[10px] uppercase font-bold py-2 px-3 rounded shadow-lg transition-colors flex-1 text-center"
                                     >
                                         Añadir a la cesta
                                     </a>
                                     <a 
-                                        href="/My3DStore/?action=login"
+                                        href="<?php echo htmlspecialchars(url('login')); ?>"
                                         class="bg-blue-900 hover:bg-blue-800 text-white text-[10px] uppercase font-bold py-2 px-3 rounded shadow-lg transition-colors flex-1 text-center"
                                     >
                                         Personalizar

@@ -29,7 +29,7 @@ include __DIR__ . '/../../includes/header.php';
             </div>
         <?php endif; ?>
         
-        <form action="/My3DStore/?action=register" class="space-y-5" method="POST">
+        <form action="<?php echo htmlspecialchars(url('register')); ?>" class="space-y-5" method="POST">
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="name">Usuario</label>
                 <div class="relative">
@@ -131,7 +131,7 @@ include __DIR__ . '/../../includes/header.php';
         
         <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800">
             <p class="text-center text-gray-600 dark:text-gray-400 text-sm mb-4">¿Ya tienes una cuenta?</p>
-            <a href="/My3DStore/?action=login" class="w-full bg-transparent border-2 border-primary text-primary hover:bg-primary hover:text-white font-semibold py-2.5 rounded-lg transition-all block text-center">
+            <a href="<?php echo htmlspecialchars(url('login')); ?>" class="w-full bg-transparent border-2 border-primary text-primary hover:bg-primary hover:text-white font-semibold py-2.5 rounded-lg transition-all block text-center">
                 Iniciar sesión
             </a>
         </div>

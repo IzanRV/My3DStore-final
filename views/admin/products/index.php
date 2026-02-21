@@ -6,7 +6,7 @@ include __DIR__ . '/../../../includes/header.php';
 <div class="admin-page">
     <div class="admin-header">
         <h1>Gestionar Productos</h1>
-        <a href="/My3DStore/?action=admin-product-create" class="btn btn-primary">Crear Producto</a>
+        <a href="<?php echo htmlspecialchars(url('admin-product-create')); ?>" class="btn btn-primary">Crear Producto</a>
     </div>
     
     <div class="admin-table-container">
@@ -41,8 +41,8 @@ include __DIR__ . '/../../../includes/header.php';
                             <td><?php echo formatPrice($product['price']); ?></td>
                             <td><?php echo htmlspecialchars($product['author'] ?? '-'); ?></td>
                             <td class="actions">
-                                <a href="/My3DStore/?action=admin-product-edit&id=<?php echo $product['id']; ?>" class="btn btn-small">Editar</a>
-                                <form method="POST" action="/My3DStore/?action=admin-product-delete" style="display: inline;">
+                                <a href="<?php echo htmlspecialchars(url('admin-product-edit', ['id' => $product['id']])); ?>" class="btn btn-small">Editar</a>
+                                <form method="POST" action="<?php echo htmlspecialchars(url('admin-product-delete')); ?>" style="display: inline;">
                                     <input type="hidden" name="id" value="<?php echo $product['id']; ?>">
                                     <button type="submit" class="btn btn-danger btn-small" onclick="return confirm('¿Estás seguro?');">Eliminar</button>
                                 </form>

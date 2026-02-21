@@ -28,13 +28,13 @@ class OrderController {
         
         if (!$order) {
             setFlashMessage('Pedido no encontrado', 'error');
-            redirect('/My3DStore/?action=orders');
+            redirect(url('orders'));
         }
         
         // Verificar que el pedido pertenece al usuario (a menos que sea admin)
         if ($order['user_id'] != $userId && !isAdmin()) {
             setFlashMessage('No tienes permiso para ver este pedido', 'error');
-            redirect('/My3DStore/?action=orders');
+            redirect(url('orders'));
         }
         
         $items = $this->orderModel->getItems($id);

@@ -30,7 +30,7 @@ class AuthController {
                 $_SESSION['user_role'] = $user['role'];
                 
                 setFlashMessage('Bienvenido, ' . $user['name'], 'success');
-                redirect('/My3DStore/');
+                redirect(url(''));
             } else {
                 setFlashMessage('Email o contraseña incorrectos', 'error');
             }
@@ -85,7 +85,7 @@ class AuthController {
                 $_SESSION['user_role'] = 'user';
                 
                 setFlashMessage('Registro exitoso. Bienvenido!', 'success');
-                redirect('/My3DStore/');
+                redirect(url(''));
             } else {
                 setFlashMessage('Error al registrar usuario', 'error');
             }
@@ -98,7 +98,7 @@ class AuthController {
         startSession();
         session_destroy();
         setFlashMessage('Sesión cerrada correctamente', 'success');
-        redirect('/My3DStore/?action=login');
+        redirect(url('login'));
     }
 }
 

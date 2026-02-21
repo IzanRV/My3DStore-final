@@ -38,7 +38,7 @@
                     </div>
                 </div>
                 <div class="bg-white/10 backdrop-blur-md p-8 rounded-[2rem] border border-white/20">
-                    <form class="space-y-6" method="POST" action="/My3DStore/?action=contact">
+                    <form class="space-y-6" method="POST" action="<?php echo htmlspecialchars(url('contact')); ?>">
                         <div class="space-y-2">
                             <label class="text-sm font-medium">Nombre</label>
                             <input class="w-full bg-white/5 border-white/20 rounded-xl focus:ring-accent-blue focus:border-accent-blue placeholder-white/40" placeholder="Tu nombre" type="text" name="name" required/>

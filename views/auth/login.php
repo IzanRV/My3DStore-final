@@ -29,7 +29,7 @@ include __DIR__ . '/../../includes/header.php';
             </div>
         <?php endif; ?>
         
-        <form action="/My3DStore/?action=login" class="space-y-6" method="POST">
+        <form action="<?php echo htmlspecialchars(url('login')); ?>" class="space-y-6" method="POST">
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="email">Usuario</label>
                 <div class="relative">
@@ -70,7 +70,7 @@ include __DIR__ . '/../../includes/header.php';
                     />
                     Recordarme
                 </label>
-                <a class="text-primary hover:underline font-medium" href="/My3DStore/?action=forgot-password">¿He olvidado mi contraseña?</a>
+                <a class="text-primary hover:underline font-medium" href="<?php echo htmlspecialchars(url('forgot-password')); ?>">¿He olvidado mi contraseña?</a>
             </div>
             
             <button class="w-full bg-primary hover:bg-blue-700 text-white font-semibold py-3 rounded-lg shadow-lg shadow-primary/30 transition-all transform active:scale-[0.98]" type="submit">
@@ -80,7 +80,7 @@ include __DIR__ . '/../../includes/header.php';
         
         <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800">
             <p class="text-center text-gray-600 dark:text-gray-400 text-sm mb-4">¿No tienes una cuenta aún?</p>
-            <a href="/My3DStore/?action=register" class="w-full bg-transparent border-2 border-primary text-primary hover:bg-primary hover:text-white font-semibold py-2.5 rounded-lg transition-all block text-center">
+            <a href="<?php echo htmlspecialchars(url('register')); ?>" class="w-full bg-transparent border-2 border-primary text-primary hover:bg-primary hover:text-white font-semibold py-2.5 rounded-lg transition-all block text-center">
                 Crear cuenta
             </a>
         </div>

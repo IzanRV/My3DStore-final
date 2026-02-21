@@ -158,7 +158,7 @@ $navAccount = ($currentAction === 'account' || $currentAction === 'login');
 </div>
 <div class="flex-1 max-w-xl hidden md:block">
 <div class="relative group">
-<form action="/My3DStore/" method="GET">
+<form action="<?php echo htmlspecialchars(getBasePath()); ?>" method="GET">
 <input type="hidden" name="action" value="products">
 <input class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-full py-2.5 pl-5 pr-12 focus:ring-2 focus:ring-primary/50 transition-all" placeholder="Buscar productos o materiales..." type="text" name="search" value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>"/>
 <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-primary text-white rounded-full">
@@ -168,21 +168,21 @@ $navAccount = ($currentAction === 'account' || $currentAction === 'login');
 </div>
 </div>
 <nav class="flex items-center gap-1 sm:gap-4">
-<a href="/My3DStore/" class="hidden lg:flex items-center gap-2 px-4 py-2 text-sm font-medium hover:text-primary transition-colors <?php echo $navHome ? 'text-primary' : 'text-slate-700 dark:text-slate-200'; ?>">
+<a href="<?php echo htmlspecialchars(url('')); ?>" class="hidden lg:flex items-center gap-2 px-4 py-2 text-sm font-medium hover:text-primary transition-colors <?php echo $navHome ? 'text-primary' : 'text-slate-700 dark:text-slate-200'; ?>">
                     Inicio
                 </a>
-<a href="/My3DStore/?action=products" class="hidden lg:flex items-center gap-2 px-4 py-2 text-sm font-medium hover:text-primary transition-colors <?php echo $navProducts ? 'text-primary' : 'text-slate-700 dark:text-slate-200'; ?>">
+<a href="<?php echo htmlspecialchars(url('products')); ?>" class="hidden lg:flex items-center gap-2 px-4 py-2 text-sm font-medium hover:text-primary transition-colors <?php echo $navProducts ? 'text-primary' : 'text-slate-700 dark:text-slate-200'; ?>">
                     Productos
                 </a>
-<a href="/My3DStore/?action=customize" class="hidden lg:flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition-all <?php echo $navCustomize ? 'bg-primary/90 text-white shadow-inner ring-2 ring-primary/50' : 'bg-primary text-white hover:bg-primary/90 shadow-md'; ?>">
+<a href="<?php echo htmlspecialchars(url('customize')); ?>" class="hidden lg:flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition-all <?php echo $navCustomize ? 'bg-primary/90 text-white shadow-inner ring-2 ring-primary/50' : 'bg-primary text-white hover:bg-primary/90 shadow-md'; ?>">
                     Personalización
                 </a>
 <div class="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-2 hidden sm:block"></div>
-<a href="/My3DStore/?action=cart" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full flex flex-col items-center <?php echo $navCart ? 'text-primary' : 'text-slate-700 dark:text-slate-200'; ?>">
+<a href="<?php echo htmlspecialchars(url('cart')); ?>" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full flex flex-col items-center <?php echo $navCart ? 'text-primary' : 'text-slate-700 dark:text-slate-200'; ?>">
 <span class="material-icons-outlined">shopping_cart</span>
 <span class="text-[10px] uppercase font-bold mt-0.5">Cesta</span>
 </a>
-<a href="/My3DStore/?action=<?php echo isLoggedIn() ? 'account' : 'login'; ?>" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full flex flex-col items-center <?php echo $navAccount ? 'text-primary' : 'text-slate-700 dark:text-slate-200'; ?>">
+<a href="<?php echo htmlspecialchars(url(isLoggedIn() ? 'account' : 'login')); ?>" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full flex flex-col items-center <?php echo $navAccount ? 'text-primary' : 'text-slate-700 dark:text-slate-200'; ?>">
 <span class="material-icons-outlined">person</span>
 <span class="text-[10px] uppercase font-bold mt-0.5">Perfil</span>
 </a>
@@ -217,19 +217,19 @@ $navAccount = ($currentAction === 'account' || $currentAction === 'login');
                 </div>
                 <div class="h-px bg-white/20 mb-3"></div>
                 <div class="space-y-3 pl-8">
-                    <a href="/My3DStore/?action=products&material=PLA" class="flex items-center gap-3 text-white hover:text-blue-300 transition-colors">
+                    <a href="<?php echo htmlspecialchars(url('products', ['material' => 'PLA'])); ?>" class="flex items-center gap-3 text-white hover:text-blue-300 transition-colors">
                         <div class="material-icon-blue"></div>
                         <span>Plástico</span>
                     </a>
-                    <a href="/My3DStore/?action=products&material=Madera" class="flex items-center gap-3 text-white hover:text-blue-300 transition-colors">
+                    <a href="<?php echo htmlspecialchars(url('products', ['material' => 'Madera'])); ?>" class="flex items-center gap-3 text-white hover:text-blue-300 transition-colors">
                         <div class="material-icon-brown"></div>
                         <span>Madera</span>
                     </a>
-                    <a href="/My3DStore/?action=products&material=Metal" class="flex items-center gap-3 text-white hover:text-blue-300 transition-colors">
+                    <a href="<?php echo htmlspecialchars(url('products', ['material' => 'Metal'])); ?>" class="flex items-center gap-3 text-white hover:text-blue-300 transition-colors">
                         <div class="material-icon-metal"></div>
                         <span>Metal</span>
                     </a>
-                    <a href="/My3DStore/?action=products&material=Ceramica" class="flex items-center gap-3 text-white hover:text-blue-300 transition-colors">
+                    <a href="<?php echo htmlspecialchars(url('products', ['material' => 'Ceramica'])); ?>" class="flex items-center gap-3 text-white hover:text-blue-300 transition-colors">
                         <div class="material-icon-ceramic"></div>
                         <span>Cerámica</span>
                     </a>
@@ -238,15 +238,15 @@ $navAccount = ($currentAction === 'account' || $currentAction === 'login');
 
             <!-- Standalone Menu Items -->
             <div class="space-y-3">
-                <a href="/My3DStore/?action=products&filter=offers" class="flex items-center gap-3 text-white hover:text-blue-300 transition-colors">
+                <a href="<?php echo htmlspecialchars(url('products', ['filter' => 'offers'])); ?>" class="flex items-center gap-3 text-white hover:text-blue-300 transition-colors">
                     <span class="material-icons-outlined">sell</span>
                     <span>Ofertas</span>
                 </a>
-                <a href="/My3DStore/?action=products&filter=new" class="flex items-center gap-3 text-white hover:text-blue-300 transition-colors">
+                <a href="<?php echo htmlspecialchars(url('products', ['filter' => 'new'])); ?>" class="flex items-center gap-3 text-white hover:text-blue-300 transition-colors">
                     <span class="material-icons-outlined">rocket_launch</span>
                     <span>Novedades</span>
                 </a>
-                <a href="/My3DStore/?action=customize" class="flex items-center gap-3 text-white hover:text-blue-300 transition-colors">
+                <a href="<?php echo htmlspecialchars(url('customize')); ?>" class="flex items-center gap-3 text-white hover:text-blue-300 transition-colors">
                     <span class="material-icons-outlined">auto_fix_high</span>
                     <span>Diseña con IA</span>
                 </a>
@@ -254,7 +254,7 @@ $navAccount = ($currentAction === 'account' || $currentAction === 'login');
 
             <!-- Cuenta Section -->
             <div class="pt-4 border-t border-white/20">
-                <a href="/My3DStore/?action=<?php echo isLoggedIn() ? 'account' : 'login'; ?>" class="flex items-center gap-3 text-white hover:text-blue-300 transition-colors">
+                <a href="<?php echo htmlspecialchars(url(isLoggedIn() ? 'account' : 'login')); ?>" class="flex items-center gap-3 text-white hover:text-blue-300 transition-colors">
                     <span class="material-icons-outlined">person</span>
                     <span>Cuenta</span>
                 </a>

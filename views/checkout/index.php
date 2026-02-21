@@ -90,7 +90,7 @@ include __DIR__ . '/../../includes/header.php';
                         <span class="text-primary"><?php echo formatPrice($total); ?></span>
                     </div>
                 </div>
-                <form method="POST" action="/My3DStore/?action=checkout" class="checkout-form">
+                <form method="POST" action="<?php echo htmlspecialchars(url('checkout')); ?>" class="checkout-form">
                 <h2 class="text-lg font-bold mt-4 mb-2">Dirección de Envío</h2>
                 <div class="form-group">
                     <label for="shipping_address">Dirección completa:</label>

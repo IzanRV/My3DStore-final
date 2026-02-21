@@ -35,7 +35,7 @@ include __DIR__ . '/../../../includes/header.php';
                             <td><?php echo htmlspecialchars($user['name'] ?? 'N/A'); ?></td>
                             <td><?php echo formatPrice($order['total']); ?></td>
                             <td>
-                                <form method="POST" action="/My3DStore/?action=admin-order-update-status" style="display: inline;">
+                                <form method="POST" action="<?php echo htmlspecialchars(url('admin-order-update-status')); ?>" style="display: inline;">
                                     <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
                                     <select name="status" onchange="this.form.submit()">
                                         <option value="pending" <?php echo $order['status'] === 'pending' ? 'selected' : ''; ?>>Pendiente</option>
@@ -48,7 +48,7 @@ include __DIR__ . '/../../../includes/header.php';
                             </td>
                             <td><?php echo date('d/m/Y H:i', strtotime($order['created_at'])); ?></td>
                             <td class="actions">
-                                <a href="/My3DStore/?action=order&id=<?php echo $order['id']; ?>" class="btn btn-small">Ver</a>
+                                <a href="<?php echo htmlspecialchars(url('order', ['id' => $order['id']])); ?>" class="btn btn-small">Ver</a>
                             </td>
                         </tr>
                     <?php endforeach; ?>

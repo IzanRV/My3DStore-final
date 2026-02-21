@@ -9,7 +9,7 @@ include __DIR__ . '/../../includes/header.php';
     <?php if (empty($orders)): ?>
         <div class="no-orders">
             <p>No tienes pedidos aún.</p>
-            <a href="/My3DStore/?action=products" class="btn btn-primary">Ver Productos</a>
+            <a href="<?php echo htmlspecialchars(url('products')); ?>" class="btn btn-primary">Ver Productos</a>
         </div>
     <?php else: ?>
         <div class="orders-list">
@@ -40,7 +40,7 @@ include __DIR__ . '/../../includes/header.php';
                         <p><strong>Dirección:</strong> <?php echo nl2br(htmlspecialchars($order['shipping_address'])); ?></p>
                     </div>
                     <div class="order-actions">
-                        <a href="/My3DStore/?action=order&id=<?php echo $order['id']; ?>" class="btn btn-primary">Ver Detalles</a>
+                        <a href="<?php echo htmlspecialchars(url('order', ['id' => $order['id']])); ?>" class="btn btn-primary">Ver Detalles</a>
                     </div>
                 </div>
             <?php endforeach; ?>

@@ -6,7 +6,7 @@ include __DIR__ . '/../../../includes/header.php';
 <div class="admin-page">
     <h1>Crear Producto</h1>
     
-    <form method="POST" action="/My3DStore/?action=admin-product-create" class="admin-form">
+    <form method="POST" action="<?php echo htmlspecialchars(url('admin-product-create')); ?>" class="admin-form">
         <div class="form-group">
             <label for="name">Nombre del producto:</label>
             <input type="text" id="name" name="name" required>
@@ -29,7 +29,7 @@ include __DIR__ . '/../../../includes/header.php';
         
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Crear Producto</button>
-            <a href="/My3DStore/?action=admin-products" class="btn btn-secondary">Cancelar</a>
+            <a href="<?php echo htmlspecialchars(url('admin-products')); ?>" class="btn btn-secondary">Cancelar</a>
         </div>
     </form>
 </div>

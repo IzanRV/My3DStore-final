@@ -24,7 +24,7 @@ class CheckoutController {
         
         if (empty($items)) {
             setFlashMessage('Tu carrito está vacío', 'error');
-            redirect('/My3DStore/?action=cart');
+            redirect(url('cart'));
         }
         
         $user = $this->userModel->findById($userId);
@@ -83,7 +83,7 @@ class CheckoutController {
                 $this->cartModel->clear($userId);
                 
                 setFlashMessage('Pedido realizado correctamente', 'success');
-                redirect("/My3DStore/?action=order&id=$orderId");
+                redirect(url('order', ['id' => $orderId]));
             } else {
                 setFlashMessage('Error al procesar el pedido', 'error');
             }
