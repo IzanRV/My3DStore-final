@@ -1,0 +1,36 @@
+# Secretos y claves (nunca subir)
+key
+.env
+.env.*
+!.env.example
+
+# Configuración local (usar los .example como plantilla)
+config/database.php
+config/tripo3d.php
+config/replicate.php
+config/meshy.php
+
+# Dependencias
+vendor/
+node_modules/
+
+# IDE y sistema
+.idea/
+.vscode/
+*.swp
+*.swo
+Thumbs.db
+.DS_Store
+
+# Logs y caché
+*.log
+storage/
+cache/
+
+# Archivos generados (no subir al repo)
+public/generated_models/
+public/stl/*.stl
+public/stl/generated/*.stl
+
+# Modelos muy grandes (límite GitHub 100 MB)
+public/stl/985361/dovahkiin_helmet.obj

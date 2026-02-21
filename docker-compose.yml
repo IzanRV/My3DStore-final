@@ -1,0 +1,110 @@
+services:
+  # Base de datos MySQL
+  db:
+    image: mysql:8.0
+    container_name: my3dstore_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-tienda_3d}
+      MYSQL_USER: ${MYSQL_USER:-tienda_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-tienda_password}
+    # Puerto 3308 en el host (3306 y 3307 pueden estar en uso por WAMP/otros)
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    networks:
+      - my3dstore_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend: PHP-FPM (lógica de la aplicación, BD, scripts)
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: my3dstore_backend
+    restart: unless-stopped
+    volumes:
+      - .:/var/www/html
+    environment:
+      - DB_HOST=db
+      - DB_USER=${MYSQL_USER:-tienda_user}
+      - DB_PASS=${MYSQL_PASSWORD:-tienda_password}
+      - DB_NAME=${MYSQL_DATABASE:-tienda_3d}
+      - PYTHON_PATH=/usr/bin/python3
+      - DOCKER_CONTAINER=1
+      - AI_3D_SERVICE_URL=http://ai3d:8000
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - my3dstore_network
+
+  # Frontend: Nginx (servir estáticos + proxy a backend)
+  # Puerto 8081 fijo para evitar conflicto con 8080 (cámbialo aquí si lo necesitas)
+  frontend:
+    image: nginx:alpine
+    container_name: my3dstore_frontend
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    volumes:
+      - .:/var/www/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+    networks:
+      - my3dstore_network
+
+  # Microservicio IA 3D (FastAPI) - generación text-to-3d, jobs, descargas
+  ai3d:
+    build:
+      context: ./ai_3d_service
+      dockerfile: Dockerfile
+    container_name: my3dstore_ai3d
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+    volumes:
+      - ./ai_3d_service/uploads:/app/uploads
+      - ./ai_3d_service/output:/app/output
+      - ./ai_3d_service/cache:/app/cache
+      - ./ai_3d_service/logs:/app/logs
+    networks:
+      - my3dstore_network
+
+  # Contenedor Python para scripts de generación 3D (opcional, puede ejecutarse desde web)
+  python:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    container_name: my3dstore_python
+    restart: unless-stopped
+    volumes:
+      - .:/app
+      - ./public/glb/generated:/app/public/glb/generated
+      - ./public/stl/generated:/app/public/stl/generated
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - my3dstore_network
+    # Este servicio puede ejecutarse bajo demanda o mantenerse corriendo
+    profiles:
+      - python-service
+
+networks:
+  my3dstore_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local

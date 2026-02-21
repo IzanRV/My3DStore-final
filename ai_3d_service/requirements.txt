@@ -1,0 +1,39 @@
+# FastAPI y servidor
+fastapi>=0.104.1
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+
+
+# Procesamiento de imágenes
+Pillow>=10.1.0
+# Fijar a 1.x: NumPy 2.0 eliminó ndarray.ptp() y trimesh lo usa internamente
+numpy>=1.26.0,<2.0
+
+# Procesamiento 3D
+trimesh==3.23.5
+pygltflib==1.15.2
+
+# Modelos de IA (opcionales - instalar según necesidad)
+# torch>=2.0.0
+# torchvision>=0.15.0
+# shap-e  # Instalar desde: https://github.com/openai/shap-e
+# point-e  # Instalar desde: https://github.com/openai/point-e
+# triposr  # Instalar desde: https://github.com/VAST-AI-Research/TripoSR
+
+# Redis (para cola de trabajos - opcional)
+redis==5.0.1
+celery==5.3.4
+
+# Almacenamiento en la nube (opcional)
+boto3==1.29.7  # Para S3
+
+# Utilidades
+python-dotenv==1.0.0
+requests==2.31.0
+httpx==0.25.2  # Para API externa (Meshy.ai)
+deep-translator==1.11.4  # Traducción de descripciones (endpoint /description/improve)
+
+# Logging
+loguru==0.7.2

@@ -1,0 +1,12 @@
+<?php
+// Configuración de Replicate API para Shap-E (Text-to-3D)
+// Obtén tu API key en: https://replicate.com/account/api-tokens
+// Copia este archivo a replicate.php y configura tu API key
+
+return [
+    'api_key' => getenv('REPLICATE_API_KEY') ?: 'TU_API_KEY_REPLICATE',
+    'api_base_url' => 'https://api.replicate.com/v1',
+    'model' => 'openai/shap-e',
+    'timeout' => 300,
+    'connect_timeout' => 30
+];
