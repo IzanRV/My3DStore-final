@@ -11,6 +11,7 @@ class AI3DController {
     private $aiService;
     private $outputDir;
     private $stlDir;
+    private $logoDir;
 
     public function __construct() {
         // Configurar URL del microservicio (Docker: http://ai3d:8000)
@@ -20,6 +21,7 @@ class AI3DController {
         $this->aiService = new AI3DService($serviceUrl, $apiKey);
         $this->outputDir = __DIR__ . '/../public/generated_models';
         $this->stlDir = __DIR__ . '/../public/stl';
+        $this->logoDir = __DIR__ . '/../public/images/logos';
 
         // Crear directorios si no existen
         if (!is_dir($this->outputDir)) {
@@ -27,6 +29,9 @@ class AI3DController {
         }
         if (!is_dir($this->stlDir)) {
             mkdir($this->stlDir, 0755, true);
+        }
+        if (!is_dir($this->logoDir)) {
+            mkdir($this->logoDir, 0755, true);
         }
     }
 
@@ -283,27 +288,68 @@ class AI3DController {
                 return;
             }
 
-            $productName = $prompt !== ''
-                ? $this->extractProductName($prompt)
-                : 'Modelo generado por IA - ' . date('d/m/Y H:i');
-            $description = 'Modelo 3D generado automáticamente por IA. '
-                . ($prompt !== '' ? 'Descripción: "' . $prompt . '". ' : '')
-                . 'Añadido al catálogo desde el asistente IA 3D.';
-            $price = 19.99;
+            $productName = trim($_POST['name'] ?? '');
+            if ($productName === '') {
+                $productName = $prompt !== ''
+                    ? $this->extractProductName($prompt)
+                    : 'Modelo generado por IA - ' . date('d/m/Y H:i');
+            }
+            $description = trim($_POST['description'] ?? '');
+            if ($description === '') {
+                $description = 'Modelo 3D generado automáticamente por IA. '
+                    . ($prompt !== '' ? 'Descripción: "' . $prompt . '". ' : '')
+                    . 'Añadido al catálogo desde el personalizador.';
+            }
+            $price = isset($_POST['price']) ? floatval($_POST['price']) : 19.99;
+            if ($price <= 0) {
+                $price = 19.99;
+            }
+            $material = trim($_POST['material'] ?? 'PLA');
+            $dimX = isset($_POST['dim_x']) ? floatval($_POST['dim_x']) : 100;
+            $dimY = isset($_POST['dim_y']) ? floatval($_POST['dim_y']) : 100;
+            $dimZ = isset($_POST['dim_z']) ? floatval($_POST['dim_z']) : 100;
+            $color = trim($_POST['color'] ?? '');
+            if ($color !== '' && !preg_match('/^#[0-9A-Fa-f]{6}$/', $color)) {
+                $color = '';
+            }
+            $logoSide = trim($_POST['logo_side'] ?? '');
+            $allowedSides = ['front', 'back', 'left', 'right', 'top', 'bottom'];
+            if (!in_array($logoSide, $allowedSides, true)) {
+                $logoSide = 'front';
+            }
+            $logoUrl = '';
+            if (!empty($_FILES['logo']['tmp_name']) && is_uploaded_file($_FILES['logo']['tmp_name']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
+                $logoExt = strtolower(pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION));
+                if (in_array($logoExt, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
+                    $logoBasename = 'logo_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $logoExt;
+                    $logoPath = $this->logoDir . '/' . $logoBasename;
+                    if (move_uploaded_file($_FILES['logo']['tmp_name'], $logoPath)) {
+                        $logoUrl = 'images/logos/' . $logoBasename;
+                    }
+                }
+            }
             $imageUrl = '';
-            $stock = 10;
-            $category = 'Generado por IA';
+            $stlUrl = 'stl/' . $safeBasename;
+            require_once __DIR__ . '/../models/User.php';
+            $userModel = new User();
+            $user = $userModel->findById($_SESSION['user_id'] ?? 0);
+            $author = $user['name'] ?? '';
 
             $productModel = new Product();
-            $newId = $productModel->create($productName, $description, $price, $imageUrl, $stock, $category);
+            try {
+                $newId = $productModel->createPublish($productName, $description, $price, $imageUrl, $stlUrl, $material, $dimX, $dimY, $dimZ, $author, $color, $logoUrl, $logoSide);
+            } catch (Throwable $e) {
+                @unlink($stlPath);
+                http_response_code(500);
+                echo json_encode(['error' => 'Error en la base de datos: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
+                return;
+            }
             if (!$newId) {
                 @unlink($stlPath);
                 http_response_code(500);
                 echo json_encode(['error' => 'Error al crear el producto en la base de datos']);
                 return;
             }
-
-            $productModel->updateDimensions($newId, $safeBasename);
 
             $productUrl = url('product', ['id' => $newId]);
 

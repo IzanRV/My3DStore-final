@@ -16,6 +16,9 @@ class AIChatbot {
     init() {
         this.createChatUI();
         this.loadChatHistory();
+        if (this.options.openByDefault && !this.isOpen) {
+            setTimeout(() => this.toggleChat(), 100);
+        }
     }
 
     createChatUI() {

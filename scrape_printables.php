@@ -638,10 +638,8 @@ function processPrintablesModels(array $models, PrintablesScraper $scraper, $imp
             $price = 19.99;
         }
         $imageUrl = $imageFilename ? asset('images/' . $imageFilename) : '';
-        $stock = 10;
-        $category = isset($options['category']) && $options['category'] !== '' ? (string) $options['category'] : 'Printables';
 
-        $newId = $productModel->create($name, $description, $price, $imageUrl, $stock, $category);
+        $newId = $productModel->create($name, $description, $price, $imageUrl);
         if ($newId) {
             if ($stlFilename) {
                 $productModel->updateDimensions($newId, $stlFilename);

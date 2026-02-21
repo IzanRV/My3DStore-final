@@ -22,16 +22,13 @@ class Order {
             $productModel = new Product();
             foreach ($items as $item) {
                 $product = $productModel->findById($item['product_id']);
-                if (!$product || $product['stock'] < $item['quantity']) {
-                    throw new Exception("Stock insuficiente para el producto: " . $product['name']);
+                if (!$product) {
+                    throw new Exception("Producto no encontrado: " . $item['product_id']);
                 }
                 
                 $stmt = $this->db->prepare("INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)");
                 $stmt->bind_param("iiid", $orderId, $item['product_id'], $item['quantity'], $item['price']);
                 $stmt->execute();
-                
-                // Actualizar stock
-                $productModel->updateStock($item['product_id'], $item['quantity']);
             }
             
             $this->db->getConnection()->commit();

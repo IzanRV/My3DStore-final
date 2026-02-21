@@ -44,12 +44,15 @@ try {
             echo "✓ Columna 'dimensions' ya existe.\n";
         }
         
-        $columns = $conn->query("SHOW COLUMNS FROM products LIKE 'weight'");
-        if ($columns->num_rows == 0) {
-            $conn->query("ALTER TABLE products ADD COLUMN weight VARCHAR(50) AFTER dimensions");
-            echo "✓ Columna 'weight' añadida.\n";
-        } else {
-            echo "✓ Columna 'weight' ya existe.\n";
+        foreach (['dim_x' => "DECIMAL(10,2) NULL COMMENT 'Dimension X en mm'", 'dim_y' => "DECIMAL(10,2) NULL COMMENT 'Dimension Y en mm'", 'dim_z' => "DECIMAL(10,2) NULL COMMENT 'Dimension Z en mm'"] as $col => $def) {
+            $columns = $conn->query("SHOW COLUMNS FROM products LIKE '$col'");
+            if ($columns->num_rows == 0) {
+                $after = $col === 'dim_x' ? 'dimensions' : ($col === 'dim_y' ? 'dim_x' : 'dim_y');
+                $conn->query("ALTER TABLE products ADD COLUMN $col $def AFTER $after");
+                echo "✓ Columna '$col' añadida.\n";
+            } else {
+                echo "✓ Columna '$col' ya existe.\n";
+            }
         }
         
         // Verificar si hay productos sin material y actualizar algunos
@@ -59,7 +62,7 @@ try {
             echo "\nActualizando productos existentes con información de material...\n";
             
             // Actualizar productos con materiales por defecto
-            $conn->query("UPDATE products SET material = 'PLA', dimensions = '10cm x 10cm x 10cm', weight = '100g' WHERE (material IS NULL OR material = '') LIMIT 20");
+            $conn->query("UPDATE products SET material = 'PLA', dimensions = '10cm x 10cm x 10cm', dim_x = 100, dim_y = 100, dim_z = 100 WHERE (material IS NULL OR material = '') LIMIT 20");
             echo "✓ Productos actualizados.\n";
         }
         

@@ -205,11 +205,20 @@ include __DIR__ . '/../../includes/header.php';
             </button>
         </div>
         
+        <!-- Cartel inicial: diseña con la IA (se oculta cuando hay modelo generado) -->
+        <div id="preview-welcome" class="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+            <div class="text-center px-8 py-12 rounded-3xl bg-white/95 dark:bg-slate-800/95 backdrop-blur shadow-xl border border-slate-200 dark:border-slate-700 pointer-events-auto max-w-md">
+                <span class="material-icons-outlined text-6xl text-primary mb-4 block">auto_awesome</span>
+                <h2 class="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">Diseña tu producto con la IA</h2>
+                <p class="text-slate-600 dark:text-slate-400 text-sm">Abre el asistente y describe el objeto 3D que quieres crear. Cuando esté listo, aparecerá aquí.</p>
+            </div>
+        </div>
+        
         <!-- Contenedor del modelo 3D -->
         <div class="relative group cursor-grab active:cursor-grabbing w-full h-full flex items-center justify-center z-0">
             <div class="absolute inset-0 bg-blue-400/10 blur-[100px] rounded-full"></div>
             <div id="preview-3d-container" class="preview-3d relative z-0 w-full h-full max-w-4xl">
-                <div id="preview-loading" class="preview-loading absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-slate-900/50 rounded-xl">
+                <div id="preview-loading" class="preview-loading absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-slate-900/50 rounded-xl hidden">
                     <div class="text-center">
                         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
                         <p class="text-slate-600 dark:text-slate-400">Cargando modelo 3D...</p>
@@ -218,22 +227,52 @@ include __DIR__ . '/../../includes/header.php';
             </div>
         </div>
         
-        <!-- Botón Descargar modelo (habilitado cuando hay modelo generado por IA) -->
-        <div class="absolute bottom-24 left-1/2 -translate-x-1/2 z-10">
-            <a id="download-model-btn" href="#" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-600 text-white font-medium opacity-60 pointer-events-none cursor-not-allowed transition-all" title="Genera un modelo para poder descargarlo">
-                <span class="material-icons-outlined text-sm">download</span>
-                Descargar modelo
-            </a>
-        </div>
-        <!-- Botón de añadir al carrito -->
-        <div class="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-md px-6 z-10">
-            <button id="add-to-cart-btn" class="w-full bg-primary hover:bg-blue-700 text-white py-4 px-8 rounded-2xl shadow-xl shadow-primary/20 font-bold flex items-center justify-center gap-3 transition-all transform hover:-translate-y-1 active:scale-95">
-                <span class="material-icons-outlined">shopping_cart</span>
-                <span>Añadir al Carrito — <span id="final-price">15,00€</span></span>
+        <!-- Botón Publicar (visible solo cuando hay modelo) -->
+        <div id="add-to-cart-wrap" class="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-md px-6 z-10 hidden">
+            <button id="publish-btn" type="button" class="w-full bg-primary hover:bg-blue-700 text-white py-4 px-8 rounded-2xl shadow-xl shadow-primary/20 font-bold flex items-center justify-center gap-3 transition-all transform hover:-translate-y-1 active:scale-95">
+                <span class="material-icons-outlined">publish</span>
+                <span>Publicar</span>
             </button>
         </div>
     </section>
 </main>
+
+<!-- Modal Publicar producto -->
+<div id="publish-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" id="publish-modal-backdrop"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-700" role="dialog" aria-labelledby="publish-modal-title">
+            <div class="p-6">
+                <h2 id="publish-modal-title" class="text-xl font-bold mb-4">Publicar producto</h2>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">El modelo actual se añadirá al catálogo con los datos que indiques. La vista previa del producto (a la izquierda) muestra el modelo con el color y dimensiones elegidos.</p>
+                <form id="publish-form">
+                    <div class="space-y-4">
+                        <div>
+                            <label for="publish-name" class="block text-sm font-medium mb-1">Nombre del producto</label>
+                            <input type="text" id="publish-name" name="name" required class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100" placeholder="Ej: Mi figura 3D">
+                        </div>
+                        <div>
+                            <label for="publish-description" class="block text-sm font-medium mb-1">Descripción</label>
+                            <textarea id="publish-description" name="description" rows="3" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100" placeholder="Describe tu producto..."></textarea>
+                        </div>
+                        <div class="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4 space-y-2 text-sm">
+                            <p class="font-medium">Vista previa del producto</p>
+                            <p class="text-slate-600 dark:text-slate-400">Dimensiones: <span id="publish-preview-dims">—</span> mm</p>
+                            <p class="text-slate-600 dark:text-slate-400">Material: <span id="publish-preview-material">—</span></p>
+                            <p class="text-slate-600 dark:text-slate-400">Precio: <span id="publish-preview-price" class="font-bold text-primary">—</span></p>
+                        </div>
+                    </div>
+                    <div class="flex gap-3 mt-6">
+                        <button type="button" id="publish-modal-cancel" class="flex-1 py-2.5 px-4 rounded-xl border border-slate-300 dark:border-slate-600 font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Cancelar</button>
+                        <button type="submit" id="publish-modal-submit" class="flex-1 py-2.5 px-4 rounded-xl bg-primary hover:bg-blue-700 text-white font-bold transition-colors">Aceptar</button>
+                    </div>
+                </form>
+                <p id="publish-error" class="mt-3 text-sm text-red-500 hidden"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="ai-chatbot" aria-hidden="true"></div>
 
 <script>
@@ -274,36 +313,26 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     const loadingDiv = document.getElementById('preview-loading');
-    const downloadBtn = document.getElementById('download-model-btn');
+    const welcomeDiv = document.getElementById('preview-welcome');
+    const addToCartWrap = document.getElementById('add-to-cart-wrap');
 
-    // Botón Descargar modelo: habilitado cuando hay modelo generado por IA
-    let currentDownloadJobId = null;
-    function updateDownloadButton(jobId) {
-        currentDownloadJobId = jobId || null;
-        if (downloadBtn) {
-            if (currentDownloadJobId) {
-                downloadBtn.href = (window.BASE_PATH || '/') + 'api/ai3d.php?action=downloadModel&job_id=' + encodeURIComponent(currentDownloadJobId);
-                downloadBtn.classList.remove('opacity-60', 'pointer-events-none', 'cursor-not-allowed');
-                downloadBtn.classList.add('hover:bg-slate-500', 'cursor-pointer');
-                downloadBtn.title = 'Descargar el último modelo generado';
-            } else {
-                downloadBtn.href = '#';
-                downloadBtn.classList.add('opacity-60', 'pointer-events-none', 'cursor-not-allowed');
-                downloadBtn.classList.remove('hover:bg-slate-500', 'cursor-pointer');
-                downloadBtn.title = 'Genera un modelo para poder descargarlo';
-            }
-        }
+    function onModelReady() {
+        if (welcomeDiv) welcomeDiv.style.display = 'none';
+        if (addToCartWrap) addToCartWrap.classList.remove('hidden');
     }
-    if (downloadBtn) {
-        downloadBtn.addEventListener('click', function(e) {
-            if (!currentDownloadJobId) e.preventDefault();
-        });
+    function onViewerCleared() {
+        if (welcomeDiv) welcomeDiv.style.display = '';
+        if (addToCartWrap) addToCartWrap.classList.add('hidden');
     }
 
-    // Inicializar chatbot con visor y callbacks para descarga
+    const hasJobInUrl = !!window.CUSTOMIZE_JOB_ID;
+    if (hasJobInUrl && welcomeDiv) welcomeDiv.style.display = 'none';
+
+    // Inicializar chatbot con visor; abrir por defecto si no hay modelo
     const chatbot = new AIChatbot('ai-chatbot', viewer, {
-        onModelReady: function(jobId) { updateDownloadButton(jobId); },
-        onViewerCleared: function() { updateDownloadButton(null); }
+        onModelReady: onModelReady,
+        onViewerCleared: onViewerCleared,
+        openByDefault: !hasJobInUrl
     });
 
     // Si hay job_id en la URL: no cargar GLB; hacer polling y cargar modelo en visor
@@ -336,8 +365,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (data.status === 'completed') {
                         if (loadingDiv) loadingDiv.innerHTML = '<div class="text-center"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div><p class="text-slate-600 dark:text-slate-400">Cargando modelo en el visor...</p></div>';
                         await chatbot.loadJobInViewer(jobId, promptForCatalog);
-                        updateDownloadButton(jobId);
                         if (loadingDiv) loadingDiv.style.display = 'none';
+                        onModelReady();
                         applyDimensionsToViewer();
                         return;
                     }
@@ -357,17 +386,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (loadingDiv) loadingDiv.innerHTML = '<p class="text-slate-600 dark:text-slate-400">Tiempo de espera agotado. Prueba de nuevo más tarde.</p>';
         })();
     } else {
-        // Cargar modelo GLB por defecto cuando no hay job_id
-        const glbPath = '<?php echo addslashes(asset('glb/pato.glb')); ?>';
-        viewer.loadGLB(glbPath, (progress) => {
-            if (progress.success === false) {
-                if (loadingDiv) loadingDiv.innerHTML = '<p class="text-red-500">Error al cargar el modelo 3D</p>';
-                console.error('Error loading GLB:', progress.error);
-            } else if (progress.success === true) {
-                if (loadingDiv) loadingDiv.style.display = 'none';
-                applyDimensionsToViewer();
-            }
-        });
+        // Sin job_id: no cargar modelo; se muestra el cartel "Diseña tu producto con la IA" y el chatbot abierto
+        if (loadingDiv) loadingDiv.style.display = 'none';
     }
 
     function applyDimensionsToViewer() {
@@ -391,7 +411,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Actualizar precio final
     function updatePrice() {
         const totalPrice = basePrice + materialPrice;
-        document.getElementById('final-price').textContent = totalPrice.toFixed(2).replace('.', ',') + '€';
+        const el = document.getElementById('final-price');
+        if (el) el.textContent = totalPrice.toFixed(2).replace('.', ',') + '€';
     }
 
     // Selectores de color
@@ -463,8 +484,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Logo en modelo 3D
+    // Logo en modelo 3D (currentLogoFile se envía al publicar)
     let currentLogoUrl = null;
+    let currentLogoFile = null;
     let selectedLogoSide = 'front';
     const logoOptionsWrap = document.getElementById('logo-options-wrap');
     const logoInput = document.getElementById('logo');
@@ -486,6 +508,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 logoOptionsWrap.classList.add('hidden');
                 if (currentLogoUrl) URL.revokeObjectURL(currentLogoUrl);
                 currentLogoUrl = null;
+                currentLogoFile = null;
                 return;
             }
             if (file.size > 10 * 1024 * 1024) {
@@ -495,6 +518,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (currentLogoUrl) URL.revokeObjectURL(currentLogoUrl);
             currentLogoUrl = URL.createObjectURL(file);
+            currentLogoFile = file;
             logoOptionsWrap.classList.remove('hidden');
         });
     }
@@ -508,6 +532,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     document.getElementById('logo-remove-btn')?.addEventListener('click', function() {
         if (viewer && viewer.removeLogo) viewer.removeLogo();
+        currentLogoFile = null;
+        if (currentLogoUrl) { URL.revokeObjectURL(currentLogoUrl); currentLogoUrl = null; }
+        if (logoInput) logoInput.value = '';
+        logoOptionsWrap.classList.add('hidden');
     });
 
     // Controles de zoom y vista
@@ -523,39 +551,120 @@ document.addEventListener('DOMContentLoaded', function() {
         if (viewer && viewer.resetView) viewer.resetView();
     });
 
-    // Botón añadir al carrito
-    document.getElementById('add-to-cart-btn')?.addEventListener('click', function() {
+    // Botón Publicar: abrir modal
+    const publishModal = document.getElementById('publish-modal');
+    const publishBtn = document.getElementById('publish-btn');
+    const publishForm = document.getElementById('publish-form');
+    const publishError = document.getElementById('publish-error');
+    let publishAutoRotateId = null;
+
+    function openPublishModal() {
         <?php if (!isLoggedIn()): ?>
             window.location.href = (window.BASE_PATH || '/') + '?action=login';
-        <?php else: ?>
-            // Aquí iría la lógica para añadir al carrito
-            const width = document.getElementById('width').value;
-            const height = document.getElementById('height').value;
-            const depth = document.getElementById('depth').value;
-            const selectedColor = document.querySelector('.color-btn.active')?.dataset.color || '#003d7a';
-            const selectedMaterial = document.querySelector('.material-btn.active')?.dataset.material || 'PLA';
-            const finalPrice = basePrice + materialPrice;
-            
-            // Crear formulario y enviar
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = (window.BASE_PATH || '/') + '?action=cart-add';
-            
-            const productId = document.createElement('input');
-            productId.type = 'hidden';
-            productId.name = 'product_id';
-            productId.value = '<?php echo $_GET['product_id'] ?? 0; ?>';
-            form.appendChild(productId);
-            
-            const quantity = document.createElement('input');
-            quantity.type = 'hidden';
-            quantity.name = 'quantity';
-            quantity.value = '1';
-            form.appendChild(quantity);
-            
-            document.body.appendChild(form);
-            form.submit();
+            return;
         <?php endif; ?>
+        if (!window.CUSTOMIZE_JOB_ID) {
+            if (publishError) {
+                publishError.textContent = 'No hay un modelo generado para publicar. Genera uno primero con el asistente.';
+                publishError.classList.remove('hidden');
+            }
+            return;
+        }
+        const w = document.getElementById('width')?.value || 100;
+        const h = document.getElementById('height')?.value || 100;
+        const d = document.getElementById('depth')?.value || 100;
+        const material = document.querySelector('.material-btn.active')?.dataset.material || 'PLA';
+        const totalPrice = basePrice + materialPrice;
+        document.getElementById('publish-preview-dims').textContent = w + ' × ' + h + ' × ' + d;
+        document.getElementById('publish-preview-material').textContent = material;
+        document.getElementById('publish-preview-price').textContent = totalPrice.toFixed(2).replace('.', ',') + ' €';
+        if (publishError) publishError.classList.add('hidden');
+        publishModal.classList.remove('hidden');
+        publishModal.setAttribute('aria-hidden', 'false');
+        if (viewer && viewer.model) {
+            function rotateStep() {
+                if (viewer && viewer.model) viewer.model.rotation.y += 0.01;
+                publishAutoRotateId = requestAnimationFrame(rotateStep);
+            }
+            rotateStep();
+        }
+    }
+
+    function closePublishModal() {
+        publishModal.classList.add('hidden');
+        publishModal.setAttribute('aria-hidden', 'true');
+        if (publishAutoRotateId) {
+            cancelAnimationFrame(publishAutoRotateId);
+            publishAutoRotateId = null;
+        }
+    }
+
+    publishBtn?.addEventListener('click', openPublishModal);
+    document.getElementById('publish-modal-cancel')?.addEventListener('click', closePublishModal);
+    document.getElementById('publish-modal-backdrop')?.addEventListener('click', closePublishModal);
+
+    publishForm?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const name = document.getElementById('publish-name').value.trim();
+        const description = document.getElementById('publish-description').value.trim();
+        if (!name) {
+            if (publishError) { publishError.textContent = 'Indica un nombre para el producto.'; publishError.classList.remove('hidden'); }
+            return;
+        }
+        const jobId = window.CUSTOMIZE_JOB_ID;
+        const price = basePrice + materialPrice;
+        const material = document.querySelector('.material-btn.active')?.dataset.material || 'PLA';
+        const dimX = document.getElementById('width')?.value || 100;
+        const dimY = document.getElementById('height')?.value || 100;
+        const dimZ = document.getElementById('depth')?.value || 100;
+        const colorEl = document.querySelector('.color-btn.active');
+        const color = (colorEl && colorEl.dataset.color) ? (colorEl.dataset.color.startsWith('#') ? colorEl.dataset.color : '#' + colorEl.dataset.color) : '';
+        const formData = new FormData();
+        formData.append('action', 'saveAsProduct');
+        formData.append('job_id', jobId);
+        formData.append('name', name);
+        formData.append('description', description || name);
+        formData.append('price', price.toFixed(2));
+        formData.append('material', material);
+        formData.append('dim_x', dimX);
+        formData.append('dim_y', dimY);
+        formData.append('dim_z', dimZ);
+        if (color) formData.append('color', color);
+        formData.append('logo_side', selectedLogoSide);
+        if (currentLogoFile) formData.append('logo', currentLogoFile);
+        const submitBtn = document.getElementById('publish-modal-submit');
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Publicando...'; }
+        if (publishError) publishError.classList.add('hidden');
+        fetch((window.BASE_PATH || '/') + 'api/ai3d.php?action=saveAsProduct', {
+            method: 'POST',
+            body: formData
+        }).then(function(r) {
+            return r.text().then(function(text) {
+                try {
+                    return { ok: r.ok, data: text ? JSON.parse(text) : {} };
+                } catch (e) {
+                    return { ok: false, data: { error: r.status >= 400 ? ('Error del servidor (' + r.status + ')') : 'Respuesta no válida' } };
+                }
+            });
+        }).then(function(result) {
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Aceptar'; }
+            var data = result.data;
+            if (result.ok && data.success && data.product_url) {
+                closePublishModal();
+                window.location.href = data.product_url;
+            } else {
+                if (publishError) {
+                    publishError.textContent = data.error || 'Error al publicar el producto.';
+                    publishError.classList.remove('hidden');
+                }
+            }
+        }).catch(function(err) {
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Aceptar'; }
+            if (publishError) {
+                publishError.textContent = 'Error de conexión. Comprueba la URL del sitio y que el servidor esté activo.';
+                publishError.classList.remove('hidden');
+            }
+        });
     });
 
     // Manejar redimensionamiento

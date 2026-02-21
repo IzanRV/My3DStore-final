@@ -8,9 +8,22 @@ class Product {
         $this->db = Database::getInstance();
     }
 
-    public function create($name, $description, $price, $imageUrl, $stock, $category) {
-        $stmt = $this->db->prepare("INSERT INTO products (name, description, price, image_url, stock, category) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("ssdsis", $name, $description, $price, $imageUrl, $stock, $category);
+    public function create($name, $description, $price, $imageUrl) {
+        $stmt = $this->db->prepare("INSERT INTO products (name, description, price, image_url) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("ssds", $name, $description, $price, $imageUrl);
+        
+        if ($stmt->execute()) {
+            return $this->db->getLastInsertId();
+        }
+        return false;
+    }
+
+    /**
+     * Crea un producto publicado desde el personalizador (nombre, descripción, precio, STL, material, dimensiones, autor, color hex, logo, lado del logo).
+     */
+    public function createPublish($name, $description, $price, $imageUrl, $stlUrl, $material, $dimX, $dimY, $dimZ, $author, $color = '', $logoUrl = '', $logoSide = '') {
+        $stmt = $this->db->prepare("INSERT INTO products (name, description, price, image_url, stl_url, material, dim_x, dim_y, dim_z, author, color, logo_url, logo_side) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("ssdsssdddssss", $name, $description, $price, $imageUrl, $stlUrl, $material, $dimX, $dimY, $dimZ, $author, $color, $logoUrl, $logoSide);
         
         if ($stmt->execute()) {
             return $this->db->getLastInsertId();
@@ -39,7 +52,7 @@ class Product {
         return $products;
     }
 
-    public function search($query = '', $category = null, $material = null, $priceRange = null) {
+    public function search($query = '', $material = null, $priceRange = null) {
         $sql = "SELECT * FROM products WHERE 1=1";
         $params = [];
         $types = "";
@@ -49,12 +62,6 @@ class Product {
             $params[] = "%$query%";
             $params[] = "%$query%";
             $types .= "ss";
-        }
-        
-        if ($category) {
-            $sql .= " AND category = ?";
-            $params[] = $category;
-            $types .= "s";
         }
         
         if ($material) {
@@ -94,17 +101,12 @@ class Product {
     }
 
     public function getCategories() {
-        $result = $this->db->query("SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND category != '' ORDER BY category");
-        $categories = [];
-        while ($row = $result->fetch_assoc()) {
-            $categories[] = $row['category'];
-        }
-        return $categories;
+        return [];
     }
 
-    public function update($id, $name, $description, $price, $imageUrl, $stock, $category) {
-        $stmt = $this->db->prepare("UPDATE products SET name = ?, description = ?, price = ?, image_url = ?, stock = ?, category = ? WHERE id = ?");
-        $stmt->bind_param("ssdsisi", $name, $description, $price, $imageUrl, $stock, $category, $id);
+    public function update($id, $name, $description, $price, $imageUrl) {
+        $stmt = $this->db->prepare("UPDATE products SET name = ?, description = ?, price = ?, image_url = ? WHERE id = ?");
+        $stmt->bind_param("ssdsi", $name, $description, $price, $imageUrl, $id);
         return $stmt->execute();
     }
 
@@ -115,20 +117,18 @@ class Product {
     }
 
     public function updateStock($id, $quantity) {
-        $stmt = $this->db->prepare("UPDATE products SET stock = stock - ? WHERE id = ?");
-        $stmt->bind_param("ii", $quantity, $id);
-        return $stmt->execute();
+        return true;
     }
 
     /**
-     * Actualiza dimensions (nombre de archivo STL/GLB) y stl_url (ruta para la URL)
+     * Actualiza stl_url (ruta del archivo STL/GLB).
      */
     public function updateDimensions($id, $dimensions) {
         $stlUrl = ($dimensions !== '' && (strpos($dimensions, '.stl') !== false || strpos($dimensions, '.glb') !== false))
             ? ('stl/' . $dimensions)
             : null;
-        $stmt = $this->db->prepare("UPDATE products SET dimensions = ?, stl_url = ? WHERE id = ?");
-        $stmt->bind_param("ssi", $dimensions, $stlUrl, $id);
+        $stmt = $this->db->prepare("UPDATE products SET stl_url = ? WHERE id = ?");
+        $stmt->bind_param("si", $stlUrl, $id);
         return $stmt->execute();
     }
 }

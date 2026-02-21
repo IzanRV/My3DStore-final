@@ -41,11 +41,6 @@ class CartController {
                 redirect(url('products'));
             }
             
-            if ($product['stock'] < $quantity) {
-                setFlashMessage('Stock insuficiente', 'error');
-                redirect(url('product', ['id' => $productId]));
-            }
-            
             $userId = $_SESSION['user_id'];
             
             if ($this->cartModel->addItem($userId, $productId, $quantity)) {

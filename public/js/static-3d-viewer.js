@@ -10,21 +10,34 @@ class Static3DViewer {
             return;
         }
 
+        const ds = this.container && this.container.dataset ? this.container.dataset : {};
         this.options = {
-            modelPath: options.modelPath || (this.container && this.container.dataset.modelPath) || '/public/glb/pato.glb',
+            modelPath: options.modelPath || ds.modelPath || '/public/glb/pato.glb',
             backgroundColor: options.backgroundColor || 0xf8fafc,
-            autoRotate: options.autoRotate !== false, // Rotación automática por defecto
+            autoRotate: options.autoRotate !== false,
             rotationSpeed: options.rotationSpeed || 0.5,
             initialRotation: options.initialRotation || { x: 0, y: Math.PI / 2, z: 0 },
+            modelColor: options.modelColor !== undefined ? options.modelColor : (ds.color || null),
+            dimX: options.dimX !== undefined ? options.dimX : (ds.dimX != null && ds.dimX !== '' ? parseFloat(ds.dimX) : null),
+            dimY: options.dimY !== undefined ? options.dimY : (ds.dimY != null && ds.dimY !== '' ? parseFloat(ds.dimY) : null),
+            dimZ: options.dimZ !== undefined ? options.dimZ : (ds.dimZ != null && ds.dimZ !== '' ? parseFloat(ds.dimZ) : null),
+            logoUrl: options.logoUrl !== undefined ? options.logoUrl : (ds.logoUrl || null),
+            logoSide: options.logoSide !== undefined ? options.logoSide : (ds.logoSide || 'front'),
             ...options
         };
-
+        this.modelBaseSize = null;
+        this.modelBaseCenter = null;
+        this.modelSize = null;
+        this.logoMesh = null;
+        this.logoTexture = null;
+        this.logoSide = this.options.logoSide || 'front';
         this.scene = null;
         this.camera = null;
         this.renderer = null;
         this.model = null;
         this.animationId = null;
         this._loadId = 0;
+        this._fetchAbortController = null;
 
         this.init();
     }
@@ -100,6 +113,20 @@ class Static3DViewer {
         this.loadModel();
     }
 
+    _parseColorHex(hex) {
+        if (!hex || typeof hex !== 'string') return 0x0056b3;
+        const h = hex.replace(/^#/, '');
+        if (/^[0-9A-Fa-f]{6}$/.test(h)) return parseInt(h, 16);
+        return 0x0056b3;
+    }
+
+    _getModelColor() {
+        const c = this.options.modelColor;
+        if (c == null || c === '') return 0x0056b3;
+        if (typeof c === 'number') return c;
+        return this._parseColorHex(c);
+    }
+
     loadModel() {
         const rawPath = (this.options.modelPath || '').trim();
         const path = rawPath.replace(/\?.*$/, '').replace(/#.*$/, '').trim();
@@ -114,6 +141,10 @@ class Static3DViewer {
         const absoluteUrl = rawPath && !rawPath.startsWith('http')
             ? (window.location.origin + (rawPath.startsWith('/') ? rawPath : '/' + rawPath))
             : rawPath;
+        // #region agent log
+        var pathSlug = (path || '').replace(/^.*\//, '');
+        (function(d){fetch('http://127.0.0.1:7243/ingest/15fdd762-84aa-46d7-b990-12290b881392',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).catch(function(){});console.log('[DEBUG H5]',d);})({location:'static-3d-viewer.js:loadModel',message:'loadModel start',data:{pathSlug:pathSlug,currentLoadId:currentLoadId},timestamp:Date.now(),hypothesisId:'H5'});
+        // #endregion
 
         const tryFallback = () => {
             if (fallbackPath && fallbackPath !== path && !this._fallbackTried) {
@@ -150,15 +181,20 @@ class Static3DViewer {
                 loader.load(blobUrl,
                     (geometry) => {
                         revoke();
+                        // #region agent log
+                        var cur = isCurrentLoad(); var slug = (path || '').replace(/^.*\//, '');
+                        (function(d){fetch('http://127.0.0.1:7243/ingest/15fdd762-84aa-46d7-b990-12290b881392',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).catch(function(){});console.log('[DEBUG H4]',d);})({location:'static-3d-viewer.js:STL onLoad',message:'STL loaded',data:{pathSlug:slug,isCurrentLoad:cur,currentLoadId:currentLoadId,_loadId:this._loadId},timestamp:Date.now(),hypothesisId:'H4'});
+                        // #endregion
                         if (!isCurrentLoad()) return;
                         const material = new THREE.MeshPhongMaterial({
-                            color: 0x0056b3,
+                            color: this._getModelColor(),
                             specular: 0x222222,
                             shininess: 30
                         });
                         this.model = new THREE.Mesh(geometry, material);
                         this._centerAndScaleModel();
                         this.scene.add(this.model);
+                        this._applyProductOptions();
                         this.fitCameraToModel();
                     },
                     undefined,
@@ -179,6 +215,7 @@ class Static3DViewer {
                         }
                         this._centerAndScaleModel();
                         this.scene.add(this.model);
+                        this._applyProductOptions();
                         this.fitCameraToModel();
                     },
                     undefined,
@@ -196,13 +233,14 @@ class Static3DViewer {
                     (geometry) => {
                         if (!isCurrentLoad()) return;
                         const material = new THREE.MeshPhongMaterial({
-                            color: 0x0056b3,
+                            color: this._getModelColor(),
                             specular: 0x222222,
                             shininess: 30
                         });
                         this.model = new THREE.Mesh(geometry, material);
                         this._centerAndScaleModel();
                         this.scene.add(this.model);
+                        this._applyProductOptions();
                         this.fitCameraToModel();
                     },
                     undefined,
@@ -222,6 +260,7 @@ class Static3DViewer {
                         }
                         this._centerAndScaleModel();
                         this.scene.add(this.model);
+                        this._applyProductOptions();
                         this.fitCameraToModel();
                     },
                     undefined,
@@ -230,7 +269,9 @@ class Static3DViewer {
             }
         };
 
-        fetch(absoluteUrl, { method: 'GET', credentials: 'same-origin', cache: 'no-store' })
+        this._fetchAbortController = new AbortController();
+        const signal = this._fetchAbortController.signal;
+        fetch(absoluteUrl, { method: 'GET', credentials: 'same-origin', cache: 'no-store', signal: signal })
             .then((res) => {
                 if (!res.ok) {
                     tryFallback();
@@ -246,8 +287,11 @@ class Static3DViewer {
             .then((buffer) => {
                 if (buffer) loadFromBlob(buffer);
             })
-            .catch(() => {
-                // Si fetch falla (red, CORS, ruta), intentar carga directa con el loader; si falla, onLoadError hará tryFallback
+            .catch((err) => {
+                // #region agent log
+                (function(d){fetch('http://127.0.0.1:7243/ingest/15fdd762-84aa-46d7-b990-12290b881392',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).catch(function(){});console.log('[DEBUG H5]',d);})({location:'static-3d-viewer.js:fetch catch',message:'fetch error',data:{errName:err&&err.name,pathSlug:(path||'').replace(/^.*\//,'')},timestamp:Date.now(),hypothesisId:'H5'});
+                // #endregion
+                if (err && err.name === 'AbortError') return;
                 loadDirect();
             });
     }
@@ -257,7 +301,15 @@ class Static3DViewer {
      * @param {string} modelUrl URL absoluta o relativa del .stl o .glb
      */
     loadModelFromUrl(modelUrl) {
+        // #region agent log
+        var slug = (modelUrl || '').replace(/\?.*$/,'').replace(/^.*\//,'');
+        (function(d){fetch('http://127.0.0.1:7243/ingest/15fdd762-84aa-46d7-b990-12290b881392',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).catch(function(){});console.log('[DEBUG H2 H3]',d);})({location:'static-3d-viewer.js:loadModelFromUrl',message:'loadModelFromUrl',data:{modelUrlSlug:slug},timestamp:Date.now(),hypothesisId:'H2 H3'});
+        // #endregion
         if (!modelUrl || !this.scene) return;
+        if (this._fetchAbortController) {
+            this._fetchAbortController.abort();
+            this._fetchAbortController = null;
+        }
         if (this.model) {
             this.scene.remove(this.model);
             this.model.traverse((child) => {
@@ -288,12 +340,134 @@ class Static3DViewer {
         if (!this.model) return;
         const box = new THREE.Box3().setFromObject(this.model);
         const size = box.getSize(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
-        if (maxDim > 0) {
-            const scale = 50 / maxDim;
-            this.model.scale.multiplyScalar(scale);
-            const center = box.getCenter(new THREE.Vector3());
-            this.model.position.sub(center.multiplyScalar(scale));
+        const center = box.getCenter(new THREE.Vector3());
+        this.model.position.sub(center);
+        this.modelBaseCenter = new THREE.Vector3(0, 0, 0);
+        box.setFromObject(this.model);
+        this.modelBaseSize = box.getSize(new THREE.Vector3());
+        const sx = this.modelBaseSize.x, sy = this.modelBaseSize.y, sz = this.modelBaseSize.z;
+        const dimX = this.options.dimX, dimY = this.options.dimY, dimZ = this.options.dimZ;
+        if (dimX > 0 && dimY > 0 && dimZ > 0 && sx > 0 && sy > 0 && sz > 0) {
+            this.model.scale.set(dimX / sx, dimY / sy, dimZ / sz);
+        } else {
+            const maxDim = Math.max(sx, sy, sz);
+            if (maxDim > 0) {
+                const scale = 50 / maxDim;
+                this.model.scale.setScalar(scale);
+                box.setFromObject(this.model);
+                const c = box.getCenter(new THREE.Vector3());
+                this.model.position.sub(c);
+            }
+        }
+        box.setFromObject(this.model);
+        this.modelSize = box.getSize(new THREE.Vector3());
+    }
+
+    _applyProductOptions() {
+        if (!this.model) return;
+        const color = this._getModelColor();
+        if (color !== 0x0056b3) {
+            if (this.model.material && this.model.material.color) {
+                this.model.material.color.set(color);
+            }
+            this.model.traverse((child) => {
+                if (child.isMesh && child.material) {
+                    if (!child.material.map) {
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach(mat => { if (!mat.map) mat.color.set(color); });
+                        } else {
+                            child.material.color.set(color);
+                        }
+                    }
+                }
+            });
+        }
+        const logoUrl = this.options.logoUrl;
+        if (logoUrl) {
+            this._addLogo(logoUrl, this.options.logoSide || 'front');
+        }
+    }
+
+    _getLogoSideConfig(side) {
+        const o = 0.02;
+        const sides = {
+            front:  { offset: new THREE.Vector3(0, 0, 0.5 + o), normal: new THREE.Vector3(0, 0, 1) },
+            back:   { offset: new THREE.Vector3(0, 0, -0.5 - o), normal: new THREE.Vector3(0, 0, -1) },
+            right:  { offset: new THREE.Vector3(0.5 + o, 0, 0), normal: new THREE.Vector3(1, 0, 0) },
+            left:   { offset: new THREE.Vector3(-0.5 - o, 0, 0), normal: new THREE.Vector3(-1, 0, 0) },
+            top:    { offset: new THREE.Vector3(0, 0.5 + o, 0), normal: new THREE.Vector3(0, 1, 0) },
+            bottom: { offset: new THREE.Vector3(0, -0.5 - o, 0), normal: new THREE.Vector3(0, -1, 0) }
+        };
+        return sides[side] || sides.front;
+    }
+
+    _addLogo(imageUrl, side) {
+        const self = this;
+        this._removeLogo();
+        const loader = new THREE.TextureLoader();
+        const fullUrl = imageUrl.startsWith('http') ? imageUrl : (window.location.origin + (imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl));
+        loader.load(fullUrl, function(texture) {
+            if (THREE.SRGBColorSpace) texture.colorSpace = THREE.SRGBColorSpace;
+            else if (THREE.sRGBEncoding) texture.encoding = THREE.sRGBEncoding;
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            self.logoTexture = texture;
+            const box = new THREE.Box3().setFromObject(self.model);
+            const size = box.getSize(new THREE.Vector3());
+            const side = (self.options.logoSide || 'front').toLowerCase();
+            // Tamaño de la cara donde va el logo (menor arista de esa cara)
+            const faceMinDim = side === 'front' || side === 'back'
+                ? Math.min(size.x, size.y)
+                : side === 'left' || side === 'right'
+                    ? Math.min(size.y, size.z)
+                    : Math.min(size.x, size.z);
+            const planeSize = Math.max(faceMinDim * 0.0001, 0.5);
+            const aspect = texture.image ? texture.image.width / texture.image.height : 1;
+            const w = aspect >= 1 ? planeSize : planeSize * aspect;
+            const h = aspect >= 1 ? planeSize / aspect : planeSize;
+            const geometry = new THREE.PlaneGeometry(w, h);
+            const material = new THREE.MeshBasicMaterial({
+                map: texture,
+                transparent: true,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            });
+            self.logoMesh = new THREE.Mesh(geometry, material);
+            self.logoSide = side || 'front';
+            self.model.add(self.logoMesh);
+            self._updateLogoPosition();
+        }, undefined, function() {});
+    }
+
+    _updateLogoPosition() {
+        if (!this.logoMesh || !this.model) return;
+        const size = this.modelBaseSize || this.modelSize || new THREE.Vector3(50, 50, 50);
+        const cfg = this._getLogoSideConfig(this.logoSide);
+        this.logoMesh.position.set(
+            cfg.offset.x * size.x,
+            cfg.offset.y * size.y,
+            cfg.offset.z * size.z
+        );
+        this.logoMesh.lookAt(
+            this.logoMesh.position.x + cfg.normal.x,
+            this.logoMesh.position.y + cfg.normal.y,
+            this.logoMesh.position.z + cfg.normal.z
+        );
+    }
+
+    _removeLogo() {
+        if (this.logoMesh) {
+            if (this.logoMesh.parent) this.logoMesh.parent.remove(this.logoMesh);
+            if (this.logoMesh.geometry) this.logoMesh.geometry.dispose();
+            if (this.logoMesh.material) {
+                if (this.logoMesh.material.map) this.logoMesh.material.map.dispose();
+                this.logoMesh.material.dispose();
+            }
+            this.logoMesh = null;
+        }
+        if (this.logoTexture) {
+            this.logoTexture.dispose();
+            this.logoTexture = null;
         }
     }
 
@@ -343,6 +517,7 @@ class Static3DViewer {
     }
 
     destroy() {
+        this._removeLogo();
         if (this._resizeObserver && this.container) {
             this._resizeObserver.unobserve(this.container);
         }

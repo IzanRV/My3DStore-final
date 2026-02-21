@@ -17,26 +17,9 @@ include __DIR__ . '/../../../includes/header.php';
             <textarea id="description" name="description" rows="5" required></textarea>
         </div>
         
-        <div class="form-row">
-            <div class="form-group">
-                <label for="price">Precio (€):</label>
-                <input type="number" id="price" name="price" step="0.01" min="0" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="stock">Stock:</label>
-                <input type="number" id="stock" name="stock" min="0" required>
-            </div>
-        </div>
-        
         <div class="form-group">
-            <label for="category">Categoría:</label>
-            <input type="text" id="category" name="category" list="categories">
-            <datalist id="categories">
-                <?php foreach ($categories as $cat): ?>
-                    <option value="<?php echo htmlspecialchars($cat); ?>">
-                <?php endforeach; ?>
-            </datalist>
+            <label for="price">Precio (€):</label>
+            <input type="number" id="price" name="price" step="0.01" min="0" required>
         </div>
         
         <div class="form-group">

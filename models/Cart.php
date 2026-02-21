@@ -36,7 +36,7 @@ class Cart {
 
     public function getItems($userId) {
         $stmt = $this->db->prepare("
-            SELECT ci.*, p.name, p.price, p.image_url, p.stock, p.material, p.dimensions, p.category, p.weight
+            SELECT ci.*, p.name, p.price, p.image_url, p.stl_url, p.material, p.author, p.dim_x, p.dim_y, p.dim_z, p.color, p.logo_url, p.logo_side
             FROM cart_items ci 
             JOIN products p ON ci.product_id = p.id 
             WHERE ci.user_id = ?

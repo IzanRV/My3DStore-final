@@ -35,10 +35,17 @@ $fallbackModelUrl = htmlspecialchars(asset('glb/pato.glb'));
                     <img src="" alt="<?php echo htmlspecialchars($product['name']); ?>" class="max-w-full max-h-full w-full h-full object-contain">
                 </div>
                 <div class="product-carousel-slide product-carousel-slide-model absolute inset-0" style="z-index:5;">
-                    <div id="product-detail-3d" class="static-3d-viewer w-full h-full" style="width: 100%; height: 500px;" data-model-path="<?php echo htmlspecialchars(($productModels[0] ?? asset('glb/pato.glb'))); ?>" data-fallback-model-path="<?php echo $fallbackModelUrl; ?>"></div>
+                    <div id="product-detail-3d" class="static-3d-viewer w-full h-full" style="width: 100%; height: 500px;"
+                        data-model-path="<?php echo htmlspecialchars(($productModels[0] ?? asset('glb/pato.glb'))); ?>"
+                        data-fallback-model-path="<?php echo $fallbackModelUrl; ?>"
+                        <?php if (!empty($product['color'])): ?>data-color="<?php echo htmlspecialchars($product['color']); ?>"<?php endif; ?>
+                        <?php if (isset($product['dim_x']) && $product['dim_x'] !== null && $product['dim_x'] !== ''): ?>data-dim-x="<?php echo htmlspecialchars($product['dim_x']); ?>" data-dim-y="<?php echo htmlspecialchars($product['dim_y'] ?? $product['dim_x']); ?>" data-dim-z="<?php echo htmlspecialchars($product['dim_z'] ?? $product['dim_x']); ?>"<?php endif; ?>
+                        <?php if (!empty($product['logo_url'])): ?>data-logo-url="<?php echo htmlspecialchars(asset($product['logo_url'])); ?>"<?php endif; ?>
+                        <?php if (!empty($product['logo_side'])): ?>data-logo-side="<?php echo htmlspecialchars($product['logo_side']); ?>"<?php endif; ?>
+                    ></div>
                 </div>
                 <?php if (count($productMedia) > 1): ?>
-                <div class="product-carousel-index text-center py-2 absolute bottom-2 left-0 right-0 z-20 text-sm text-slate-600 dark:text-slate-400">1 / <?php echo count($productMedia); ?></div>
+                <div class="product-carousel-index text-center absolute bottom-2 left-0 right-0 z-20 text-sm text-white font-medium rounded px-3 py-1 bg-black/60 shadow-sm w-fit mx-auto">1 / <?php echo count($productMedia); ?></div>
                 <?php endif; ?>
             </div>
         </div>
@@ -69,16 +76,10 @@ $fallbackModelUrl = htmlspecialchars(asset('glb/pato.glb'));
             
             <div class="product-specs">
                 <h3>Especificaciones</h3>
-                <?php if (!empty($product['dimensions'])): ?>
+                <?php if (isset($product['dim_x']) && $product['dim_x'] !== null && $product['dim_x'] !== ''): ?>
                     <div class="spec-item">
-                        <span><strong>Dimensiones:</strong></span>
-                        <span><?php echo htmlspecialchars($product['dimensions']); ?></span>
-                    </div>
-                <?php endif; ?>
-                <?php if (!empty($product['weight'])): ?>
-                    <div class="spec-item">
-                        <span><strong>Peso:</strong></span>
-                        <span><?php echo htmlspecialchars($product['weight']); ?></span>
+                        <span><strong>Dimensiones (X × Y × Z):</strong></span>
+                        <span><?php echo htmlspecialchars(formatDimensions($product['dim_x'], $product['dim_y'] ?? null, $product['dim_z'] ?? null)); ?></span>
                     </div>
                 <?php endif; ?>
                 <?php if (!empty($product['material'])): ?>
@@ -89,15 +90,13 @@ $fallbackModelUrl = htmlspecialchars(asset('glb/pato.glb'));
                 <?php endif; ?>
             </div>
             
-            <div class="product-stock">
-                <?php if ($product['stock'] > 0): ?>
-                    <p class="stock-available">✓ En stock (<?php echo $product['stock']; ?> disponibles)</p>
-                <?php else: ?>
-                    <p class="stock-unavailable">✗ Agotado</p>
-                <?php endif; ?>
+            <?php if (!empty($product['author'])): ?>
+            <div class="product-author text-sm text-slate-500 dark:text-slate-400">
+                <strong>Autor:</strong> <?php echo htmlspecialchars($product['author']); ?>
             </div>
+            <?php endif; ?>
             
-            <?php if (isLoggedIn() && $product['stock'] > 0): ?>
+            <?php if (isLoggedIn()): ?>
                 <div class="product-actions-detail">
                     <a href="/My3DStore/?action=checkout&product_id=<?php echo $product['id']; ?>&quantity=1" class="btn btn-primary btn-large">Compra ya</a>
                     <form method="POST" action="/My3DStore/?action=cart-add" style="flex: 1;">
@@ -190,10 +189,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showSlide(index) {
+        // #region agent log
+        (function(d){fetch('http://127.0.0.1:7243/ingest/15fdd762-84aa-46d7-b990-12290b881392',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).catch(function(){});console.log('[DEBUG H1]',d);})({location:'show.php:showSlide',message:'showSlide called',data:{index:index,total:total,nextIndex:(index+total)%total},timestamp:Date.now(),hypothesisId:'H1'});
+        // #endregion
         if (total === 0) return;
         currentIndex = (index + total) % total;
         var item = media[currentIndex];
         if (!item) return;
+        if (indexEl) indexEl.textContent = (currentIndex + 1) + ' / ' + total;
         if (item.type === 'image') {
             slideImage.style.display = 'flex';
             slideModel.style.display = 'none';
@@ -201,12 +204,16 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             slideImage.style.display = 'none';
             slideModel.style.display = 'block';
-            if (window.productDetailViewer && typeof window.productDetailViewer.loadModelFromUrl === 'function' && item.url) {
+            var hasViewer = !!(window.productDetailViewer && typeof window.productDetailViewer.loadModelFromUrl === 'function');
+            var itemUrlSlug = item.url ? item.url.replace(/^.*\//,'') : '';
+            // #region agent log
+            (function(d){fetch('http://127.0.0.1:7243/ingest/15fdd762-84aa-46d7-b990-12290b881392',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).catch(function(){});console.log('[DEBUG H2 H3]',d);})({location:'show.php:model branch',message:'model slide',data:{currentIndex:currentIndex,itemUrlSlug:itemUrlSlug,hasViewer:hasViewer,hasItemUrl:!!item.url},timestamp:Date.now(),hypothesisId:'H2 H3'});
+            // #endregion
+            if (item.url && window.productDetailViewer && typeof window.productDetailViewer.loadModelFromUrl === 'function') {
                 var modelUrl = toAbsoluteUrl(item.url);
                 window.productDetailViewer.loadModelFromUrl(modelUrl);
             }
         }
-        if (indexEl) indexEl.textContent = (currentIndex + 1) + ' / ' + total;
     }
 
     if (total <= 1) {

@@ -7,7 +7,6 @@ include __DIR__ . '/../../includes/header.php';
 // Obtener valores de filtros actuales
 $currentPrice = $_GET['price'] ?? '';
 $currentMaterial = $_GET['material'] ?? '';
-$currentCategory = $_GET['category'] ?? '';
 $currentSearch = $_GET['search'] ?? '';
 ?>
 
@@ -197,7 +196,7 @@ $currentSearch = $_GET['search'] ?? '';
                                 </div>
                             </a>
                             <div class="card-3d absolute inset-0 w-full h-full min-h-0 hidden z-10 pointer-events-auto bg-[#e2e8f0] dark:bg-slate-800 overflow-hidden">
-                                <div class="card-static-3d-viewer w-full h-full overflow-hidden" style="width:100%;height:100%;min-height:0;" data-model-path="<?php echo htmlspecialchars($modelPath); ?>" data-fallback-model-path="<?php echo htmlspecialchars($fallbackPath); ?>" data-auto-rotate="true" data-rotation-speed="0.5"></div>
+                                <div class="card-static-3d-viewer w-full h-full overflow-hidden" style="width:100%;height:100%;min-height:0;" data-model-path="<?php echo htmlspecialchars($modelPath); ?>" data-fallback-model-path="<?php echo htmlspecialchars($fallbackPath); ?>" data-auto-rotate="true" data-rotation-speed="0.5"<?php if (!empty($product['color'])): ?> data-color="<?php echo htmlspecialchars($product['color']); ?>"<?php endif; ?><?php if (isset($product['dim_x']) && $product['dim_x'] !== null && $product['dim_x'] !== ''): ?> data-dim-x="<?php echo htmlspecialchars($product['dim_x']); ?>" data-dim-y="<?php echo htmlspecialchars($product['dim_y'] ?? $product['dim_x']); ?>" data-dim-z="<?php echo htmlspecialchars($product['dim_z'] ?? $product['dim_x']); ?>"<?php endif; ?><?php if (!empty($product['logo_url'])): ?> data-logo-url="<?php echo htmlspecialchars(asset($product['logo_url'])); ?>"<?php endif; ?><?php if (!empty($product['logo_side'])): ?> data-logo-side="<?php echo htmlspecialchars($product['logo_side']); ?>"<?php endif; ?>></div>
                             </div>
                             <?php if (count($cardMedia) > 1): ?>
                             <button type="button" class="card-carousel-prev absolute left-1 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/90 dark:bg-slate-800/90 shadow flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-colors" aria-label="Anterior">
@@ -206,10 +205,10 @@ $currentSearch = $_GET['search'] ?? '';
                             <button type="button" class="card-carousel-next absolute right-1 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/90 dark:bg-slate-800/90 shadow flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-colors" aria-label="Siguiente">
                                 <span class="material-icons-outlined text-lg">chevron_right</span>
                             </button>
-                            <div class="card-carousel-dot absolute bottom-1 left-0 right-0 flex justify-center gap-1 z-20 text-[10px] text-white/90">1/<?php echo count($cardMedia); ?></div>
+                            <div class="card-carousel-dot absolute bottom-14 left-1/2 -translate-x-1/2 z-20 w-fit text-[10px] text-white font-medium rounded px-2 py-0.5 bg-black/60 shadow-sm">1/<?php echo count($cardMedia); ?></div>
                             <?php endif; ?>
                             <div class="absolute bottom-4 left-0 right-0 flex justify-center space-x-2 px-2 z-10">
-                                <?php if ($product['stock'] > 0 && isLoggedIn()): ?>
+                                <?php if (isLoggedIn()): ?>
                                     <form method="POST" action="/My3DStore/?action=cart-add" class="flex-1">
                                         <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
                                         <input type="hidden" name="quantity" value="1">
@@ -222,11 +221,11 @@ $currentSearch = $_GET['search'] ?? '';
                                     </form>
                                     <a 
                                         href="/My3DStore/?action=customize&product_id=<?php echo $product['id']; ?>"
-                                        class="bg-footer-dark hover:bg-blue-900 text-white text-[10px] uppercase font-bold py-2 px-3 rounded shadow-lg transition-colors flex-1 text-center"
+                                        class="bg-blue-900 hover:bg-blue-800 text-white text-[10px] uppercase font-bold py-2 px-3 rounded shadow-lg transition-colors flex-1 text-center"
                                     >
                                         Personalizar
                                     </a>
-                                <?php elseif ($product['stock'] > 0): ?>
+                                <?php else: ?>
                                     <a 
                                         href="/My3DStore/?action=login"
                                         class="bg-primary hover:bg-blue-600 text-white text-[10px] uppercase font-bold py-2 px-3 rounded shadow-lg transition-colors flex-1 text-center"
@@ -235,17 +234,10 @@ $currentSearch = $_GET['search'] ?? '';
                                     </a>
                                     <a 
                                         href="/My3DStore/?action=login"
-                                        class="bg-footer-dark hover:bg-blue-900 text-white text-[10px] uppercase font-bold py-2 px-3 rounded shadow-lg transition-colors flex-1 text-center"
+                                        class="bg-blue-900 hover:bg-blue-800 text-white text-[10px] uppercase font-bold py-2 px-3 rounded shadow-lg transition-colors flex-1 text-center"
                                     >
                                         Personalizar
                                     </a>
-                                <?php else: ?>
-                                    <button 
-                                        disabled
-                                        class="bg-slate-400 text-white text-[10px] uppercase font-bold py-2 px-3 rounded shadow-lg flex-1 cursor-not-allowed"
-                                    >
-                                        Agotado
-                                    </button>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -267,11 +259,8 @@ document.addEventListener('DOMContentLoaded', function() {
     var MAX_VIEWERS = 6;
     var activeViewerCards = [];
 
-    document.querySelectorAll('.card-3d').forEach(function(el) {
-        el.addEventListener('click', function(ev) { ev.stopPropagation(); });
-        el.addEventListener('mousedown', function(ev) { ev.stopPropagation(); });
-        el.addEventListener('touchstart', function(ev) { ev.stopPropagation(); }, { passive: true });
-    });
+    // No detenemos la propagación del clic en .card-3d para que el click en la tarjeta
+    // pueda navegar al producto también cuando se muestra el modelo 3D.
 
     function toAbsoluteUrl(url) {
         if (!url || url.indexOf('http') === 0) return url;

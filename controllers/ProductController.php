@@ -30,12 +30,11 @@ class ProductController {
 
     public function index() {
         $search = $_GET['search'] ?? '';
-        $category = $_GET['category'] ?? null;
         $material = $_GET['material'] ?? null;
         $priceRange = $_GET['price'] ?? null;
         
-        if ($search || $category || $material || $priceRange) {
-            $products = $this->productModel->search($search, $category, $material, $priceRange);
+        if ($search || $material || $priceRange) {
+            $products = $this->productModel->search($search, $material, $priceRange);
         } else {
             $products = $this->productModel->getAll();
         }

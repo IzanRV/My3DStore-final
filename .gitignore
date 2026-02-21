@@ -31,3 +31,6 @@ cache/
 public/generated_models/
 public/stl/*.stl
 public/stl/generated/*.stl
+
+# Modelos muy grandes (límite GitHub 100 MB)
+public/stl/985361/dovahkiin_helmet.obj

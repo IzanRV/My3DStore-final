@@ -46,8 +46,6 @@ class AdminController {
             $description = sanitize($_POST['description'] ?? '');
             $price = floatval($_POST['price'] ?? 0);
             $imageUrl = sanitize($_POST['image_url'] ?? '');
-            $stock = intval($_POST['stock'] ?? 0);
-            $category = sanitize($_POST['category'] ?? '');
             
             if (empty($name) || $price <= 0) {
                 setFlashMessage('Por favor, completa todos los campos obligatorios', 'error');
@@ -55,7 +53,7 @@ class AdminController {
                 return;
             }
             
-            if ($this->productModel->create($name, $description, $price, $imageUrl, $stock, $category)) {
+            if ($this->productModel->create($name, $description, $price, $imageUrl)) {
                 setFlashMessage('Producto creado correctamente', 'success');
                 redirect('/My3DStore/?action=admin-products');
             } else {
@@ -63,7 +61,6 @@ class AdminController {
             }
         }
         
-        $categories = $this->productModel->getCategories();
         include __DIR__ . '/../views/admin/products/create.php';
     }
 
@@ -83,8 +80,6 @@ class AdminController {
             $description = sanitize($_POST['description'] ?? '');
             $price = floatval($_POST['price'] ?? 0);
             $imageUrl = sanitize($_POST['image_url'] ?? '');
-            $stock = intval($_POST['stock'] ?? 0);
-            $category = sanitize($_POST['category'] ?? '');
             
             if (empty($name) || $price <= 0) {
                 setFlashMessage('Por favor, completa todos los campos obligatorios', 'error');
@@ -92,7 +87,7 @@ class AdminController {
                 return;
             }
             
-            if ($this->productModel->update($id, $name, $description, $price, $imageUrl, $stock, $category)) {
+            if ($this->productModel->update($id, $name, $description, $price, $imageUrl)) {
                 setFlashMessage('Producto actualizado correctamente', 'success');
                 redirect('/My3DStore/?action=admin-products');
             } else {
@@ -100,7 +95,6 @@ class AdminController {
             }
         }
         
-        $categories = $this->productModel->getCategories();
         include __DIR__ . '/../views/admin/products/edit.php';
     }
 

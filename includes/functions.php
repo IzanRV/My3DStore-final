@@ -77,6 +77,24 @@ function formatPrice($price) {
     return number_format($price, 2, ',', '.') . ' €';
 }
 
+/**
+ * Formatea dimensiones X, Y, Z (en mm) para mostrar.
+ * @param mixed $x
+ * @param mixed $y
+ * @param mixed $z
+ * @return string
+ */
+function formatDimensions($x, $y = null, $z = null) {
+    $x = $x !== null && $x !== '' ? (float) $x : null;
+    $y = $y !== null && $y !== '' ? (float) $y : null;
+    $z = $z !== null && $z !== '' ? (float) $z : null;
+    if ($x === null && $y === null && $z === null) {
+        return '';
+    }
+    $parts = array_filter([$x, $y, $z], function ($v) { return $v !== null; });
+    return implode(' × ', $parts) . ' mm';
+}
+
 function sanitize($data) {
     $data = trim($data);
     $data = stripslashes($data);
@@ -145,9 +163,8 @@ function asset($path) {
 }
 
 /**
- * URL del modelo 3D para un producto (STL/GLB en dimensions o pato.glb por defecto).
- * Busca en stl/ o stl/generated/ según el nombre del archivo.
- * @param array|null $product Debe contener 'dimensions' (nombre de archivo STL/GLB si existe).
+ * URL del modelo 3D para un producto (stl_url o pato.glb por defecto).
+ * @param array|null $product Debe contener 'stl_url' (ruta STL/GLB si existe).
  * @return string URL del asset del modelo.
  */
 function productModelAsset($product) {
@@ -177,8 +194,8 @@ function listStlGlbInDir($dirPath) {
 /**
  * Lista de URLs de modelos 3D para un producto.
  * Si existe la carpeta public/stl/{id}/ (por id de producto o por número en stl_url, ej. 1471971), devuelve todos los .stl/.glb.
- * Si no, devuelve un único elemento con el modelo actual (stl_url o dimensions).
- * @param array|null $product Debe contener 'id' y opcionalmente 'stl_url', 'dimensions'.
+ * Si no, devuelve un único elemento con el modelo actual (stl_url).
+ * @param array|null $product Debe contener 'id' y opcionalmente 'stl_url'.
  * @return array Lista de URLs de assets.
  */
 function productModelAssets($product) {
@@ -201,10 +218,9 @@ function productModelAssets($product) {
         }
     }
 
-    // 2) Carpeta por número en stl_url/dimensions (ej. printables_1471971_... -> carpeta stl/1471971/)
+    // 2) Carpeta por número en stl_url (ej. printables_1471971_... -> carpeta stl/1471971/)
     $stlUrl = isset($product['stl_url']) ? trim($product['stl_url']) : '';
-    $d = isset($product['dimensions']) ? trim($product['dimensions']) : '';
-    $haystack = $stlUrl . ' ' . $d;
+    $haystack = $stlUrl;
     if (preg_match_all('/(\d{4,})/', $haystack, $m)) {
         foreach (array_unique($m[1]) as $folderId) {
             $folderPath = $stlDir . $folderId;
@@ -225,20 +241,6 @@ function productModelAssets($product) {
     $stlUrl = isset($product['stl_url']) ? trim($product['stl_url']) : '';
     if ($stlUrl !== '' && (strpos($stlUrl, '.stl') !== false || strpos($stlUrl, '.glb') !== false)) {
         $single = asset($stlUrl);
-    } else {
-        $d = isset($product['dimensions']) ? trim($product['dimensions']) : '';
-        if ($d !== '' && (strpos($d, '.stl') !== false || strpos($d, '.glb') !== false)) {
-            $ext = (strpos($d, '.stl') !== false) ? 'stl' : 'glb';
-            $baseDir = __DIR__ . '/../public/' . $ext . '/';
-            $subPath = $ext . '/' . $d;
-            if ($ext === 'stl') {
-                if (file_exists($baseDir . $d)) $single = asset($subPath);
-                elseif (file_exists($baseDir . 'generated/' . $d)) $single = asset($ext . '/generated/' . $d);
-                else $single = asset($subPath);
-            } else {
-                $single = asset($subPath);
-            }
-        }
     }
     return $single ? [$single] : [asset('glb/pato.glb')];
 }

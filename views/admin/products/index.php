@@ -17,15 +17,14 @@ include __DIR__ . '/../../../includes/header.php';
                     <th>Imagen</th>
                     <th>Nombre</th>
                     <th>Precio</th>
-                    <th>Stock</th>
-                    <th>Categoría</th>
+                    <th>Autor</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($products)): ?>
                     <tr>
-                        <td colspan="7">No hay productos.</td>
+                        <td colspan="6">No hay productos.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($products as $product): ?>
@@ -40,8 +39,7 @@ include __DIR__ . '/../../../includes/header.php';
                             </td>
                             <td><?php echo htmlspecialchars($product['name']); ?></td>
                             <td><?php echo formatPrice($product['price']); ?></td>
-                            <td><?php echo $product['stock']; ?></td>
-                            <td><?php echo htmlspecialchars($product['category'] ?? '-'); ?></td>
+                            <td><?php echo htmlspecialchars($product['author'] ?? '-'); ?></td>
                             <td class="actions">
                                 <a href="/My3DStore/?action=admin-product-edit&id=<?php echo $product['id']; ?>" class="btn btn-small">Editar</a>
                                 <form method="POST" action="/My3DStore/?action=admin-product-delete" style="display: inline;">
