@@ -7,4 +7,6 @@ a2enmod -q mpm_prefork 2>/dev/null || true
 # Railway inyecta PORT; Apache debe escuchar en ese puerto
 PORT="${PORT:-80}"
 sed -i "s/^Listen .*/Listen ${PORT}/" /etc/apache2/ports.conf
+# VirtualHost debe coincidir con el puerto
+sed -i "s/<VirtualHost \*:80>/<VirtualHost *:${PORT}>/g" /etc/apache2/sites-enabled/*.conf
 exec apache2-foreground

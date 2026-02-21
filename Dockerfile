@@ -9,13 +9,8 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install -j$(nproc) gd mysqli pdo_mysql zip mbstring xml \
     && rm -rf /var/lib/apt/lists/*
 
-# Document root = public/ (front controller en public/index.php)
-ENV APACHE_DOCUMENT_ROOT /var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
-# Permitir acceso a public/ y DirectoryIndex index.php (evitar 403 Forbidden)
-COPY docker/apache-my3dstore.conf /etc/apache2/conf-available/my3dstore.conf
-RUN a2enconf my3dstore
+# Virtual host por defecto: DocumentRoot public/ y acceso permitido
+COPY docker/000-default.conf /etc/apache2/sites-available/000-default.conf
 # Dejar solo un MPM (evitar "More than one MPM loaded")
 RUN rm -f /etc/apache2/mods-enabled/mpm_*.load /etc/apache2/mods-enabled/mpm_*.conf \
     && a2enmod mpm_prefork \
