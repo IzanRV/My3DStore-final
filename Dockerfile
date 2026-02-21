@@ -20,6 +20,10 @@ RUN a2enmod rewrite headers
 
 WORKDIR /var/www/html
 
+# Script de arranque: Apache escucha en PORT (Railway lo inyecta)
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Copiar aplicación (sin .env; se inyecta por Railway)
 COPY . /var/www/html/
 
@@ -28,7 +32,5 @@ RUN mkdir -p /var/www/html/public/images /var/www/html/storage \
     && chown -R www-data:www-data /var/www/html \
     && chmod -R 775 /var/www/html/public/images /var/www/html/storage 2>/dev/null || true
 
-# Railway inyecta PORT; Apache escucha 80 por defecto
-# Si Railway asigna otro puerto, se puede usar env PORT y un script de inicio
 EXPOSE 80
-CMD ["apache2-foreground"]
+CMD ["/usr/local/bin/docker-entrypoint.sh"]
